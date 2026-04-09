@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>霓的追漫管家</title>
+    <title>霓的追劇/追漫小管家</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>追漫小管家</h1>
+        <h1>霓的追劇/追漫小管家</h1>
         <div class="stats">
             <p>總投資 C 幣：<span id="total-c-coins" class="highlight-c">0</span> C</p>
             <p>總投資金額：<span id="total-twd" class="highlight-twd">0</span> 元</p>
@@ -17,10 +17,10 @@
 
     <main>
         <section class="form-section">
-            <h2>➕ 紀錄更新 (同名將自動覆蓋舊進度)</h2>
+            <h2>➕ 紀錄更新 (自動同步至 Google 試算表)</h2>
             <form id="media-form">
                 <div class="form-group">
-                    <input type="text" id="title" placeholder="作品名稱 (必填)" required>
+                    <input type="text" id="title" placeholder="作品名稱或月費項目 (必填)" required>
                     <select id="platform">
                         <option value="bomtoon.tw">bomtoon.tw</option>
                         <option value="Webtoon">Webtoon</option>
@@ -28,6 +28,8 @@
                         <option value="BW電子書">BW電子書</option>
                         <option value="gagaOOlala">gagaOOlala</option>
                         <option value="Netflix">Netflix</option>
+                        <option value="愛奇藝">愛奇藝</option>
+                        <option value="Disney+">Disney+</option>
                         <option value="實體電影院">實體電影院</option>
                     </select>
                 </div>
@@ -57,6 +59,8 @@
             </form>
         </section>
 
+        <div id="loading-msg" class="loading-box">⏳ 正在與 Google 資料庫同步中，請稍候...</div>
+
         <section id="update-alert" class="alert-section hidden">
             <h2>🔥 今日更新提醒 (有新進度未看)</h2>
             <ul id="update-list" class="card-list"></ul>
@@ -68,12 +72,12 @@
         </section>
 
         <section class="completed-section">
-            <h2>✅ 已完結戰績</h2>
+            <h2>✅ 戰績與月費封存</h2>
             <ul id="completed-list" class="card-list"></ul>
         </section>
         
-        <div style="text-align: center; padding: 40px 0;">
-            <button id="clear-data" class="btn-clear">清空所有資料重來</button>
+        <div style="text-align: center; padding: 40px 0; font-size: 0.8rem; color: #555;">
+            資料已全面串接 Google 試算表，如需批次修改請至試算表操作。
         </div>
     </main>
 
