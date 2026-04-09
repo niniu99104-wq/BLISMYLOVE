@@ -85,7 +85,7 @@ function checkTodayUpdates() {
     let message = "";
     if (todayUpdateTitles.length > 0) message += `🔥 今日新菜上桌：\n${todayUpdateTitles.join('\n')}\n\n`;
     if (unfinishedTitles.length > 0) message += `📖 這些看到一半喔：\n${unfinishedTitles.join('\n')}\n\n`;
-    if (message !== "") alert(`🔔 霓，管家巡邏報告：\n\n${message}能量是照顧出來的，看點喜歡的補一下吧！`);
+    if (message !== "") alert(`🔔 小管家巡邏報告：\n\n${message}睡前補充一點糧食吧！`);
 }
 
 function getPlatformClass(platformName) {
