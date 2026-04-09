@@ -12,7 +12,6 @@ const statusSelect = document.getElementById('status');
 const loadingMsg = document.getElementById('loading-msg');
 const dateLabel = document.getElementById('date-label'); 
 
-// 台灣時間轉換器：處理 Google 傳來的格式，轉成精準的 YYYY-MM-DD
 function formatTaiwanDate(isoStr) {
     if (!isoStr) return "";
     if (!isoStr.includes('T')) return isoStr; 
@@ -24,7 +23,6 @@ function formatTaiwanDate(isoStr) {
     return `${y}-${m}-${day}`;
 }
 
-// 推算下次更新日
 function calculateNextDate(twDateStr, cycle) {
     if (!twDateStr || !cycle) return "";
     let parts = twDateStr.split('-');
@@ -84,12 +82,13 @@ function updateFormFields() {
     if (dateLabel) dateLabel.textContent = isVideo ? '📅 觀影日：' : '📅 最新更新日：';
     
     let htmlContent = '';
+    // 恢復最直覺的輸入法：讓系統自己乘！
     if (platform === 'bomtoon.tw') {
         htmlContent = `
             <div class="form-group">
                 <input type="number" id="cost" placeholder="每話幾C" min="0" required>
                 <input type="number" id="count" placeholder="正文已購數" min="0" required>
-                <input type="number" id="extra" placeholder="外傳總金額" value="0" min="0">
+                <input type="number" id="extra" placeholder="其他花費(周邊)" value="0" min="0">
             </div>
             <div class="form-group">
                 <input type="number" id="lastRead" placeholder="目前進度" min="0">
@@ -101,7 +100,7 @@ function updateFormFields() {
     } else if (isSubPlatform) { 
         htmlContent = `<div class="form-group" style="margin-bottom: 5px;"><input type="number" id="cost" placeholder="額外花費" value="0" min="0" required><input type="hidden" id="count" value="1"><input type="number" id="extra" placeholder="其他花費" value="0" min="0"></div><div class="form-group"><input type="number" id="lastRead" placeholder="目前進度(集)" min="0"><input type="number" id="latestChapter" placeholder="最新進度(集)" min="0"></div>`;
     } else { 
-        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="單價(元)" min="0" required><input type="number" id="count" placeholder="正文已購數" min="0" required><input type="number" id="extra" placeholder="外傳總金額" value="0" min="0"></div><div class="form-group"><input type="number" id="lastRead" placeholder="目前進度" min="0"><input type="number" id="latestChapter" placeholder="正文本數" min="0"><input type="number" id="specialCount" placeholder="外傳數" value="0" min="0"></div>`;
+        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="單價(元)" min="0" required><input type="number" id="count" placeholder="正文已購數" min="0" required><input type="number" id="extra" placeholder="其他花費" value="0" min="0"></div><div class="form-group"><input type="number" id="lastRead" placeholder="目前進度" min="0"><input type="number" id="latestChapter" placeholder="正文本數" min="0"><input type="number" id="specialCount" placeholder="外傳話數" value="0" min="0"></div>`;
     }
     dynamicFields.innerHTML = htmlContent;
 }
@@ -120,30 +119,40 @@ function renderAll() {
     let hasUpdates = false;
 
     mediaData.forEach((item) => {
-        const itemTotal = (Number(item.cost) * Number(item.count)) + Number(item.extra);
         const isBomtoon = item.platform === 'bomtoon.tw';
         const isVideo = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+', '實體電影院'].includes(item.platform);
         const isMovie = item.platform === '實體電影院';
         const unit = isVideo ? '集' : '話';
         const currencyUnit = isBomtoon ? 'C' : '元';
         
+        let cost = Number(item.cost || 0);
+        let count = Number(item.count || 0);
+        let extraCost = Number(item.extra || 0);
+        let specialTotal = Number(item.specialCount || 0);
+        
+        // 全自動計算邏輯：(正文+外傳) * 單價 + 其他
+        let itemTotal = 0;
+        if (!isVideo && !isMovie) {
+            itemTotal = (cost * count) + (cost * specialTotal) + extraCost;
+        } else {
+            itemTotal = (cost * count) + extraCost;
+        }
+
         if (isBomtoon) totalC += itemTotal; else totalTWD += itemTotal;
 
-        let lastRead = Number(item.lastRead || 0);
-        let mainTotal = Number(item.latestChapter || 0);
-        let specialTotal = Number(item.specialCount || 0);
-        let extraCost = Number(item.extra || 0);
+        let lastRead = item.lastRead || 0;
+        let mainTotal = item.latestChapter || 0;
         
         let progressText = "";
         if (isMovie) {
             progressText = `狀態：<b>✅ 已觀影</b>`;
         } else {
-            let mainRead = Math.min(lastRead, mainTotal);
-            progressText = `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${mainRead}</b> / ${mainTotal} ${unit}`;
+            progressText = `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${lastRead}</b> / ${mainTotal} ${unit}`;
             
-            // 方案 B 校正：顯示 [+ 外傳金額 / 外傳話數]
-            if (specialTotal > 0 || extraCost > 0) {
-                progressText += ` <small>(+ <b style="color: var(--accent-c)">${extraCost}</b> ${currencyUnit} / ${specialTotal} 外傳)</small>`;
+            // 完美呈現妳要的：(+ 6 C / 2 外傳)
+            if (specialTotal > 0) {
+                let specialCost = cost * specialTotal;
+                progressText += ` <small>(+ <b style="color: var(--accent-c)">${specialCost} ${currencyUnit}</b> / ${specialTotal} 外傳)</small>`;
             }
         }
 
@@ -165,7 +174,7 @@ function renderAll() {
         } else {
             if (lists.ongoing) lists.ongoing.appendChild(card.cloneNode(true));
             let isUpdateDay = (nextDateStr && todayDateStr >= nextDateStr) || (!item.customDate && item.updateDayLabel && !isVideo && {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6}[item.updateDayLabel] === todayDayOfWeek);
-            if (isUpdateDay && lastRead < (mainTotal + specialTotal)) {
+            if (isUpdateDay && Number(lastRead) < (Number(mainTotal) + specialTotal)) {
                 if (lists.update) lists.update.appendChild(card.cloneNode(true));
                 hasUpdates = true;
             }
@@ -185,15 +194,22 @@ document.getElementById('media-form').addEventListener('submit', async (e) => {
         title: document.getElementById('title').value.trim(), platform: platform,
         status: (platform === '實體電影院') ? 'watched' : document.getElementById('status').value,
         updateDayLabel: isVideo ? null : document.getElementById('updateDay').value,
-        cost: document.getElementById('cost')?.value || 0, count: document.getElementById('count')?.value || 1,
-        extra: document.getElementById('extra')?.value || 0, lastRead: document.getElementById('lastRead')?.value || 0,
+        cost: document.getElementById('cost')?.value || 0, 
+        count: document.getElementById('count')?.value || 1,
+        extra: document.getElementById('extra')?.value || 0, 
+        lastRead: document.getElementById('lastRead')?.value || 0,
         latestChapter: document.getElementById('latestChapter')?.value || 0,
         customDate: document.getElementById('customDate')?.value || "",
         specialCount: document.getElementById('specialCount')?.value || 0
     };
     submitBtn.textContent = '雲端同步中...'; submitBtn.disabled = true;
-    try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(newItem) }); await loadData(); e.target.reset(); updateFormFields(); }
-    catch (error) { alert('儲存失敗'); } finally { submitBtn.textContent = '確認儲存'; submitBtn.disabled = false; }
+    try { 
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(newItem) }); 
+        await loadData(); 
+        e.target.reset(); 
+        updateFormFields(); 
+    } catch (error) { alert('儲存失敗'); } 
+    finally { submitBtn.textContent = '確認儲存'; submitBtn.disabled = false; }
 });
 
 async function deleteItem(title) { if(!confirm(`確定要刪除「${title}」嗎？`)) return; try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', title: title }) }); await loadData(); } catch (error) { alert('刪除失敗'); } }
