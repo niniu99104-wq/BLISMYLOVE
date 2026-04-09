@@ -1,7 +1,7 @@
 :root {
     --bg-color: #0a0a0a;
     --card-bg: #161616;
-    --accent-c: #f70c6b; 
+    --accent-c: #f70c6b; /* 指定的 Bomtoon 桃紅色 */
     --accent-twd: #4caf50;
     --text-main: #f0f0f0;
     --text-sub: #888;
@@ -20,6 +20,7 @@ h2 { font-size: 1.2rem; margin-bottom: 15px; color: var(--text-sub); border-left
 .form-group { display: flex; gap: 12px; margin-bottom: 15px; }
 input, select { background: #222; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 6px; flex: 1; font-size: 1rem; }
 input::placeholder { color: #666; }
+input[type="date"] { color-scheme: dark; cursor: pointer; } /* 修復日曆無法點擊的問題 */
 
 .btn-submit { width: 100%; padding: 15px; border: none; border-radius: 6px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; color: white; }
 .btn-submit:hover { opacity: 0.8; filter: brightness(1.2); }
