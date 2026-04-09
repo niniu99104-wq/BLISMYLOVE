@@ -43,13 +43,11 @@ async function loadData() {
         mediaData = await response.json();
         mediaData.reverse(); 
         renderAll();
-        // 渲染完後立刻執行精準巡邏
         checkTodayUpdates();
     } catch (error) { console.error('連線失敗'); }
     finally { loadingMsg.style.display = 'none'; }
 }
 
-// 🔥 精準巡邏邏輯：今日更新優先，真的沒追平才叫吃到一半
 function checkTodayUpdates() {
     const now = new Date();
     const todayDayOfWeek = now.getDay(); 
@@ -61,7 +59,6 @@ function checkTodayUpdates() {
 
     mediaData.forEach((item) => {
         if (item.status === 'completed' || item.status === 'watched') return;
-
         let cleanDate = formatTaiwanDate(item.customDate);
         let nextDateStr = calculateNextDate(cleanDate, item.updateDayLabel);
         const isVideo = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+', '實體電影院'].includes(item.platform);
@@ -71,7 +68,6 @@ function checkTodayUpdates() {
         let specialTotal = Number(item.specialCount || 0);
         let totalLimit = mainTotal + specialTotal;
         
-        // 判定：更新日到了嗎？
         let isUpdateDue = false;
         if (nextDateStr && todayDateStr >= nextDateStr) isUpdateDue = true;
         if (!item.customDate && item.updateDayLabel && !isVideo) {
@@ -79,27 +75,17 @@ function checkTodayUpdates() {
             if (dayMap[item.updateDayLabel] === todayDayOfWeek) isUpdateDue = true;
         }
 
-        // 判定 1：今日新菜 (只要更新日到了，就提醒)
         if (isUpdateDue) {
             todayUpdateTitles.push(`- ${item.title} (${item.platform})`);
-        } 
-        // 判定 2：吃到一半 (非更新日，且進度落後於總話數)
-        else if (lastRead > 0 && lastRead < totalLimit) {
+        } else if (lastRead > 0 && lastRead < totalLimit) {
             unfinishedTitles.push(`- ${item.title} (進度：${lastRead}/${mainTotal})`);
         }
     });
 
     let message = "";
-    if (todayUpdateTitles.length > 0) {
-        message += `🔥 今日新菜上桌：\n${todayUpdateTitles.join('\n')}\n\n`;
-    }
-    if (unfinishedTitles.length > 0) {
-        message += `📖 這些真的還沒看完喔：\n${unfinishedTitles.join('\n')}\n\n`;
-    }
-
-    if (message !== "") {
-        alert(`🔔 小管家巡邏報告：\n\n${message}睡前補充一下糧食吧！`);
-    }
+    if (todayUpdateTitles.length > 0) message += `🔥 今日新菜上桌：\n${todayUpdateTitles.join('\n')}\n\n`;
+    if (unfinishedTitles.length > 0) message += `📖 這些看到一半喔：\n${unfinishedTitles.join('\n')}\n\n`;
+    if (message !== "") alert(`🔔小墨管家巡邏報告：\n\n${message}睡前補充一下糧食！`);
 }
 
 function getPlatformClass(platformName) {
@@ -127,7 +113,6 @@ function updateFormFields() {
     if (submitBtn) submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
     if (groupStatusDay) groupStatusDay.style.display = 'flex';
     if (updateDaySelect) updateDaySelect.style.display = isVideo ? 'none' : 'block';
-    
     if (statusSelect) {
         if (isMovie) statusSelect.innerHTML = '<option value="watched">已觀影</option>';
         else statusSelect.innerHTML = '<option value="ongoing">正在追</option><option value="completed">已完結 / 封存</option>';
@@ -164,23 +149,27 @@ function renderAll() {
         const isBomtoon = item.platform === 'bomtoon.tw';
         const isVideo = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+', '實體電影院'].includes(item.platform);
         const isMovie = item.platform === '實體電影院';
-        const unit = isVideo ? '集' : '話';
         const currencyUnit = isBomtoon ? 'C' : '元';
         let cost = Number(item.cost || 0);
         let count = Number(item.count || 0);
         let extraCost = Number(item.extra || 0);
         let specialTotal = Number(item.specialCount || 0);
         
+        // 自動計算：(正文+外傳) * 單價 + 其他
         let itemTotal = (!isVideo && !isMovie) ? (cost * (count + specialTotal)) + extraCost : (cost * count) + extraCost;
         if (isBomtoon) totalC += itemTotal; else totalTWD += itemTotal;
 
         let lastRead = Number(item.lastRead || 0);
         let mainTotal = Number(item.latestChapter || 0);
         let mainRead = Math.min(lastRead, mainTotal);
-        let specRead = Math.max(0, lastRead - mainTotal);
         
-        let progressText = isMovie ? `狀態：<b>✅ 已觀影</b>` : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${mainRead}</b> / ${mainTotal} ${unit}`;
-        if (specialTotal > 0) progressText += ` <small>(+ <b style="color: var(--accent-c)">${specRead}</b> / ${specialTotal} 外傳)</small>`;
+        let progressText = isMovie ? `狀態：<b>✅ 已觀影</b>` : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${mainRead}</b> / ${mainTotal} ${isVideo?'集':'話'}`;
+        
+        // 🐛 蟲蟲修復：括號內改為顯示「計算後的外傳花費」
+        if (specialTotal > 0) {
+            let specialCostCalculated = cost * specialTotal;
+            progressText += ` <small>(+ <b style="color: var(--accent-c)">${specialCostCalculated} ${currencyUnit}</b> / ${specialTotal} 外傳)</small>`;
+        }
 
         let cleanDate = formatTaiwanDate(item.customDate);
         let nextDateStr = calculateNextDate(cleanDate, item.updateDayLabel);
