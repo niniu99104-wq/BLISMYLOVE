@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>霓的追劇/追漫 小墨管家</title>
-    <link rel="stylesheet" href="style.css?v=xiaomo_final">
+    <link rel="stylesheet" href="style.css?v=merch_total_v1">
 </head>
 <body>
     <header>
@@ -12,6 +12,7 @@
         <div class="stats">
             <p>總投資 C 幣：<span id="total-c-coins" class="highlight-c">0</span> C</p>
             <p>總投資金額：<span id="total-twd" class="highlight-twd">0</span> 元</p>
+            <p>周邊總投資：<span id="total-merch" class="highlight-merch">0</span> 元</p>
         </div>
     </header>
 
@@ -20,7 +21,7 @@
             <h2>➕ 紀錄更新</h2>
             <form id="media-form">
                 <div class="form-group">
-                    <input type="text" id="title" placeholder="作品名稱 (必填)" required>
+                    <input type="text" id="title" placeholder="作品或商品名稱 (必填)" required>
                     <select id="platform">
                         <option value="bomtoon.tw">bomtoon.tw</option>
                         <option value="Webtoon">Webtoon</option>
@@ -31,14 +32,15 @@
                         <option value="愛奇藝">愛奇藝</option>
                         <option value="Disney+">Disney+</option>
                         <option value="實體電影院">實體電影院</option>
+                        <option value="周邊商品">✨ 周邊商品</option>
                     </select>
                 </div>
 
                 <div class="form-group" id="group-status-day">
                     <select id="status">
-                        <option value="ongoing">正在追</option>
+                        <option value="ongoing">正在追 / 預購中</option>
                         <option value="hiatus">季休中 / 待更新</option>
-                        <option value="completed">已完結 / 封存</option>
+                        <option value="completed">已完結 / 已收到</option>
                     </select>
                     <select id="updateDay">
                         <option value="#週一連載">#週一連載</option>
@@ -51,6 +53,7 @@
                         <option value="#十天一次連載">#十天一次連載</option>
                         <option value="#不定期連載">#不定期連載</option>
                         <option value="#已完結">#已完結</option>
+                        <option value="#收藏品">#收藏品</option>
                     </select>
                 </div>
 
@@ -73,7 +76,7 @@
         </section>
 
         <section class="ongoing-section">
-            <h2>📖 追追追</h2>
+            <h2>📖 追坑中</h2>
             <ul id="ongoing-list" class="card-list"></ul>
         </section>
 
@@ -81,7 +84,13 @@
             <h2>✅ 戰績與月費封存</h2>
             <ul id="completed-list" class="card-list"></ul>
         </section>
+
+                <section class="merch-section">
+            <h2>🎁 周邊戰利品區</h2>
+            <ul id="merch-list" class="card-list"></ul>
+        </section>
+        
     </main>
-    <script src="script.js?v=xiaomo_final"></script>
+    <script src="script.js?v=merch_total_v1"></script>
 </body>
 </html>
