@@ -2,16 +2,49 @@ let mediaData = JSON.parse(localStorage.getItem('bl_tracker_data')) || [];
 
 const platformSelect = document.getElementById('platform');
 const dynamicFields = document.getElementById('dynamic-fields');
+const submitBtn = document.getElementById('submit-btn');
+const updateDaySelect = document.getElementById('updateDay');
+const lastReadInput = document.getElementById('lastRead');
+const latestChapterInput = document.getElementById('latestChapter');
 
-// 根據平台動態切換輸入欄位
+// 取得平台對應的 CSS class
+function getPlatformClass(platformName) {
+    switch(platformName) {
+        case 'bomtoon.tw': return 'plat-bomtoon';
+        case 'Webtoon': return 'plat-webtoon';
+        case '鏡文學': return 'plat-mirror';
+        case 'BW電子書': return 'plat-bw';
+        case 'gagaOOlala': return 'plat-gaga';
+        case 'Netflix': return 'plat-netflix';
+        case '電影院（實體）': return 'plat-vieshow';
+        default: return 'plat-mirror';
+    }
+}
+
+// 根據平台動態切換輸入欄位、按鈕顏色、單位與連載日
 function updateFormFields() {
     const platform = platformSelect.value;
+    const isVideo = ['Netflix', 'gagaOOlala', '電影院（實體）'].includes(platform);
+    
+    // 按鈕跟著變色
+    submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
+    
+    // 影視平台自動隱藏連載日，並改變進度欄位的預設文字
+    if (isVideo) {
+        updateDaySelect.style.display = 'none';
+        lastReadInput.placeholder = "目前看到第幾集/次";
+        latestChapterInput.placeholder = "平台更新至第幾集";
+    } else {
+        updateDaySelect.style.display = 'block';
+        lastReadInput.placeholder = "目前看到第幾話/次";
+        latestChapterInput.placeholder = "平台更新至第幾話";
+    }
     
     if (platform === 'bomtoon.tw') {
         dynamicFields.innerHTML = `
-            <input type="number" id="cost" placeholder="每話 C 幣 (例: 3)" min="0" required>
+            <input type="number" id="cost" placeholder="每話 幾 C (例: 4)" min="0" required>
             <input type="number" id="count" placeholder="已購買話數" min="0" required>
-            <input type="number" id="extra" placeholder="額外花費 C 幣" value="0" min="0">
+            <input type="number" id="extra" placeholder="額外花費 (幾 C)" value="0" min="0">
         `;
     } else if (platform === '電影院（實體）') {
         dynamicFields.innerHTML = `
@@ -21,12 +54,11 @@ function updateFormFields() {
         `;
     } else if (['Netflix', 'gagaOOlala'].includes(platform)) {
         dynamicFields.innerHTML = `
-            <input type="number" id="cost" placeholder="月費/年費支出 (元)" value="0" min="0" required>
+            <input type="number" id="cost" placeholder="月/年費支出 (元)" value="0" min="0" required>
             <input type="hidden" id="count" value="1">
             <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
         `;
     } else {
-        // Webtoon, BW, 鏡文學
         dynamicFields.innerHTML = `
             <input type="number" id="cost" placeholder="單價 (元)" min="0" required>
             <input type="number" id="count" placeholder="已購話數/本數" min="0" required>
@@ -35,9 +67,8 @@ function updateFormFields() {
     }
 }
 
-// 監聽平台切換事件
 platformSelect.addEventListener('change', updateFormFields);
-updateFormFields(); // 初始化執行一次
+updateFormFields();
 
 function saveData() {
     localStorage.setItem('bl_tracker_data', JSON.stringify(mediaData));
@@ -47,21 +78,17 @@ function saveData() {
 function renderAll() {
     let totalC = 0;
     let totalTWD = 0;
-    const today = new Date().getDay(); // 0=日, 1=一...
+    const today = new Date().getDay();
     
-    const lists = {
-        update: document.getElementById("update-list"),
-        ongoing: document.getElementById("ongoing-list"),
-        completed: document.getElementById("completed-list")
-    };
-
+    const lists = { update: document.getElementById("update-list"), ongoing: document.getElementById("ongoing-list"), completed: document.getElementById("completed-list") };
     Object.values(lists).forEach(l => l.innerHTML = "");
     let hasUpdates = false;
 
     mediaData.forEach((item, index) => {
-        // 花費只跟已購數量有關
         const itemTotal = (Number(item.cost) * Number(item.count)) + Number(item.extra);
         const isBomtoon = item.platform === 'bomtoon.tw';
+        const isVideo = ['Netflix', 'gagaOOlala', '電影院（實體）'].includes(item.platform);
+        const unit = isVideo ? '集' : '話';
         
         if (isBomtoon) totalC += itemTotal;
         else totalTWD += itemTotal;
@@ -70,51 +97,52 @@ function renderAll() {
         card.className = 'card';
         card.innerHTML = `
             <button class="delete-btn" onclick="deleteItem(${index})">×</button>
-            <span class="card-platform">${item.platform}</span>
+            <span class="plat-tag ${getPlatformClass(item.platform)}">${item.platform}</span><br>
             <span class="card-title">${item.title}</span>
-            <span class="tag">${item.updateDayLabel}</span>
+            ${!isVideo ? `<span class="update-tag">${item.updateDayLabel}</span>` : ''}
             <div class="card-details">
-                進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${item.lastRead}</b> / ${item.latestChapter} 話<br>
+                進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${item.lastRead || 0}</b> / ${item.latestChapter || 0} ${unit}<br>
                 <small style="color:#666">已購基礎數：${item.count}</small>
             </div>
             <div class="card-cost ${isBomtoon ? 'cost-c' : 'cost-twd'}">
-                ${isBomtoon ? '投資：' + itemTotal + ' C' : '支出：' + itemTotal + ' 元'}
+                ${isBomtoon ? `總花費：${itemTotal} C` : `總支出：${itemTotal} 元`}
             </div>
         `;
 
-        // 狀態分流
         if (item.status === "completed") {
             lists.completed.appendChild(card);
         } else {
             lists.ongoing.appendChild(card.cloneNode(true));
             
-            // 提醒邏輯
-            const dayMap = {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6};
-            const isToday = dayMap[item.updateDayLabel] === today;
-            
-            if ((isToday || item.updateDayLabel === "#十天一次連載") && Number(item.lastRead) < Number(item.latestChapter)) {
-                lists.update.appendChild(card.cloneNode(true));
-                hasUpdates = true;
+            // 影視類不參與「今日更新提醒」，純看漫畫
+            if (!isVideo) {
+                const dayMap = {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6};
+                const isToday = dayMap[item.updateDayLabel] === today;
+                
+                if ((isToday || item.updateDayLabel === "#十天一次連載") && Number(item.lastRead || 0) < Number(item.latestChapter || 0)) {
+                    lists.update.appendChild(card.cloneNode(true));
+                    hasUpdates = true;
+                }
             }
         }
     });
 
-    // 更新頂部數據
     document.getElementById("total-c-coins").textContent = totalC;
     document.getElementById("total-twd").textContent = totalTWD;
     document.getElementById("update-alert").classList.toggle("hidden", !hasUpdates);
 }
 
-// 處理表單提交 (新增或覆蓋)
 document.getElementById('media-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    
     const title = document.getElementById('title').value.trim();
+    const platform = platformSelect.value;
+    const isVideo = ['Netflix', 'gagaOOlala', '電影院（實體）'].includes(platform);
+    
     const newItem = {
         title: title,
-        platform: platformSelect.value,
+        platform: platform,
         status: document.getElementById('status').value,
-        updateDayLabel: document.getElementById('updateDay').value,
+        updateDayLabel: isVideo ? null : document.getElementById('updateDay').value,
         cost: document.getElementById('cost').value || 0,
         count: document.getElementById('count').value || 0,
         extra: document.getElementById('extra').value || 0,
@@ -122,33 +150,21 @@ document.getElementById('media-form').addEventListener('submit', (e) => {
         latestChapter: document.getElementById('latestChapter').value || 0
     };
 
-    // 尋找是否同名，同名就覆蓋，不同名就新增
     const existingIndex = mediaData.findIndex(item => item.title === title);
-    if (existingIndex !== -1) {
-        mediaData[existingIndex] = newItem;
-    } else {
-        // 新增的放在陣列最前面，讓新坑直接出現在頂部
-        mediaData.unshift(newItem); 
-    }
+    if (existingIndex !== -1) mediaData[existingIndex] = newItem;
+    else mediaData.unshift(newItem); 
     
     saveData();
     e.target.reset();
-    updateFormFields(); // 重置表單後，讓動態欄位恢復成預設平台的樣子
+    updateFormFields(); 
 });
 
 function deleteItem(index) {
-    if(confirm('要刪除這筆紀錄嗎？')) {
-        mediaData.splice(index, 1);
-        saveData();
-    }
+    if(confirm('要刪除這筆紀錄嗎？')) { mediaData.splice(index, 1); saveData(); }
 }
 
 document.getElementById('clear-data').addEventListener('click', () => {
-    if(confirm('注意：清空後資料無法恢復，確定嗎？')) {
-        localStorage.removeItem('bl_tracker_data');
-        location.reload();
-    }
+    if(confirm('注意：清空後資料無法恢復，確定嗎？')) { localStorage.removeItem('bl_tracker_data'); location.reload(); }
 });
 
-// 載入時渲染畫面
 renderAll();
