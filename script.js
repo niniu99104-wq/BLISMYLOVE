@@ -13,8 +13,8 @@ const loadingMsg = document.getElementById('loading-msg');
 const dateLabel = document.getElementById('date-label'); 
 
 async function loadData() {
-    if (SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbx1BXE2b1ySLjC3HgG1gSgRlW4cI2Y3PAmkxNu--9-KkF5xp-_isL-yRLeNH7h7vpvRQA/exec')) {
-        alert('https://script.google.com/macros/s/AKfycbx1BXE2b1ySLjC3HgG1gSgRlW4cI2Y3PAmkxNu--9-KkF5xp-_isL-yRLeNH7h7vpvRQA/exec');
+    if (SCRIPT_URL.includes('請貼上你以')) {
+        alert('請先在 script.js 第一行貼上 Google Apps Script 網址！');
         return;
     }
     try {
@@ -24,7 +24,7 @@ async function loadData() {
         mediaData.reverse(); 
         renderAll();
     } catch (error) {
-        alert('無法連線到資料庫，請檢查網址或網路狀態。');
+        console.error('無法連線到資料庫', error);
     } finally {
         loadingMsg.style.display = 'none';
     }
@@ -69,7 +69,7 @@ function updateFormFields() {
         }
     }
     
-    // 切換輸入框旁邊的文字
+    // 切換日曆標籤文字
     if (dateLabel) {
         dateLabel.textContent = isMovie ? '📅 觀影日期：' : '📅 最新更新日：';
     }
@@ -131,13 +131,11 @@ function renderAll() {
     let totalC = 0;
     let totalTWD = 0;
     
-    // 安全取得今日日期與星期
+    // 取得台灣時間的今天日期字串 (YYYY-MM-DD)
     const todayObj = new Date();
     const todayDayOfWeek = todayObj.getDay(); 
-    const year = todayObj.getFullYear();
-    const month = String(todayObj.getMonth() + 1).padStart(2, '0');
-    const day = String(todayObj.getDate()).padStart(2, '0');
-    const todayDateStr = `${year}-${month}-${day}`;
+    const offset = todayObj.getTimezoneOffset() * 60000;
+    const todayDateStr = (new Date(todayObj - offset)).toISOString().split('T')[0];
     
     const lists = { update: document.getElementById("update-list"), ongoing: document.getElementById("ongoing-list"), completed: document.getElementById("completed-list") };
     if (!lists.ongoing) return;
@@ -159,14 +157,12 @@ function renderAll() {
             ? `狀態：<b style="color: var(--text-main)">✅ 已觀影</b>` 
             : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${item.lastRead || 0}</b> / ${item.latestChapter || 0} ${unit}`;
 
-        // 核心邏輯：防時區蟲的日期計算
+        // 核心邏輯：防時區蟲的下次更新日計算
         let nextDateStr = '';
         if (item.customDate && !isMovie && item.updateDayLabel) {
-            // 將 "YYYY-MM-DD" 拆開丟入 Date，避免時區偏移
             let parts = item.customDate.split('-');
             if (parts.length === 3) {
                 let d = new Date(parts[0], parts[1] - 1, parts[2]); 
-                
                 if (item.updateDayLabel === '#十天一次連載') {
                     d.setDate(d.getDate() + 10);
                 } else if (item.updateDayLabel.includes('週')) {
@@ -216,11 +212,10 @@ function renderAll() {
             const hasUnread = Number(item.lastRead || 0) < Number(item.latestChapter || 0);
             let isUpdateDay = false;
             
-            // 提醒判斷 1：今天 >= 推算出來的「下次更新日」
+            // 提醒判斷
             if (nextDateStr && todayDateStr >= nextDateStr) {
                 isUpdateDay = true;
             }
-            // 提醒判斷 2：如果你忘記填日期，但今天是連載日
             if (!item.customDate && item.updateDayLabel && !isVideo) {
                 const dayMap = {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6};
                 if (dayMap[item.updateDayLabel] === todayDayOfWeek) {
