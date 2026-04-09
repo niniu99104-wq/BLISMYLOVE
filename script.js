@@ -78,7 +78,7 @@ function checkTodayUpdates() {
 
     let message = "";
     if (todayUpdateTitles.length > 0) message += `🔥 今日新菜上桌：\n${todayUpdateTitles.join('\n')}\n\n`;
-    if (unfinishedTitles.length > 0) message += `📖 這些真的還沒看完喔：\n${unfinishedTitles.join('\n')}\n\n`;
+    if (unfinishedTitles.length > 0) message += `📖 這些還沒看完喔：\n${unfinishedTitles.join('\n')}\n\n`;
     if (message !== "") alert(`🔔 小墨管家巡邏報告：\n\n${message}睡前補充糧食！`);
 }
 
@@ -114,7 +114,6 @@ function updateFormFields() {
     if (dateLabel) dateLabel.textContent = isVideo ? '📅 觀影日：' : '📅 最新更新日：';
     
     let htmlContent = '';
-    // 拿掉 value="0" 讓 placeholder 可以正常顯示
     if (platform === 'bomtoon.tw') {
         htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="每話幾C" min="0" required><input type="number" id="count" placeholder="正文已購數" min="0" required><input type="number" id="specialPurchased" placeholder="外傳已購數" min="0"></div><div class="form-group"><input type="number" id="extra" placeholder="其他花費(周邊)" min="0"><input type="number" id="lastRead" placeholder="目前進度" min="0"></div><div class="form-group"><input type="number" id="latestChapter" placeholder="正文總話數" min="0"><input type="number" id="specialCount" placeholder="外傳總話數" min="0"></div>`;
     } else if (isMovie) {
@@ -166,7 +165,22 @@ function renderAll() {
 
         let cleanDate = formatTaiwanDate(item.customDate);
         let nextDateStr = calculateNextDate(cleanDate, item.updateDayLabel);
-        let dateTagHTML = (isVideo && cleanDate) ? `<div style="margin-top: 8px;"><small style="color:#aaa;">🗓️ 觀影日：${cleanDate}</small></div>` : (cleanDate ? `<div style="margin-top: 8px;"><small style="color:#aaa;">🗓️ 最新更新：${cleanDate}</small></div>${nextDateStr?`<div><small style="color:var(--accent-c); font-weight:bold;">⏰ 下次更新：${nextDateStr}</small></div>`:''}` : '');
+        
+        // 這裡改寫日期顯示邏輯
+        let dateTagHTML = '';
+        if (isVideo && cleanDate) {
+            dateTagHTML = `<div style="margin-top: 8px;"><small style="color:#aaa;">🗓️ 觀影日：${cleanDate}</small></div>`;
+        } else if (!isVideo) {
+            if (cleanDate) {
+                dateTagHTML += `<div style="margin-top: 8px;"><small style="color:#aaa;">🗓️ 最新更新：${cleanDate}</small></div>`;
+            }
+            // 判斷是否為季休
+            if (item.status === 'hiatus') {
+                dateTagHTML += `<div><small style="color:#aaa; font-weight:bold;">⏰ 下次更新：季休中 / 待更新</small></div>`;
+            } else if (nextDateStr) {
+                dateTagHTML += `<div><small style="color:var(--accent-c); font-weight:bold;">⏰ 下次更新：${nextDateStr}</small></div>`;
+            }
+        }
 
         const card = document.createElement('li');
         card.className = 'card';
