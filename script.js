@@ -10,6 +10,7 @@ const groupStatusDay = document.getElementById('group-status-day');
 const updateDaySelect = document.getElementById('updateDay');
 const statusSelect = document.getElementById('status');
 const loadingMsg = document.getElementById('loading-msg');
+const dateLabel = document.getElementById('date-label'); // 新增：控制日期標籤
 
 async function loadData() {
     if (SCRIPT_URL.includes('請在這裡貼上')) {
@@ -68,14 +69,10 @@ function updateFormFields() {
         }
     }
     
-    // 動態生成日期選擇器的 HTML
-    const dateLabel = isMovie ? '觀影日期' : '下次更新日';
-    const dateInputHTML = `
-        <div class="form-group" style="align-items: center;">
-            <input type="date" id="customDate" style="flex: 2;">
-            <span style="flex: 1; color: var(--text-sub); font-size: 0.9rem;">👈 ${dateLabel}</span>
-        </div>
-    `;
+    // 動態切換日期的文字標籤
+    if (dateLabel) {
+        dateLabel.textContent = isMovie ? '👈 觀影日期' : '👈 下次更新日';
+    }
     
     let htmlContent = '';
 
@@ -89,16 +86,14 @@ function updateFormFields() {
             <div class="form-group">
                 <input type="number" id="lastRead" placeholder="目前看到第幾話/次" min="0">
                 <input type="number" id="latestChapter" placeholder="平台更新至第幾話" min="0">
-            </div>
-            ${dateInputHTML}`;
+            </div>`;
     } else if (isMovie) {
         htmlContent = `
             <div class="form-group">
                 <input type="number" id="cost" placeholder="單張票價 (元)" min="0" required>
                 <input type="number" id="count" placeholder="電影票張數" value="1" min="1" required>
                 <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
-            </div>
-            ${dateInputHTML}`;
+            </div>`;
     } else if (isSubPlatform) { 
         htmlContent = `
             <div class="form-group" style="margin-bottom: 5px;">
@@ -112,8 +107,7 @@ function updateFormFields() {
             <div class="form-group">
                 <input type="number" id="lastRead" placeholder="目前看到第幾集/次" min="0">
                 <input type="number" id="latestChapter" placeholder="平台更新至第幾集" min="0">
-            </div>
-            ${dateInputHTML}`;
+            </div>`;
     } else { 
         htmlContent = `
             <div class="form-group">
@@ -124,8 +118,7 @@ function updateFormFields() {
             <div class="form-group">
                 <input type="number" id="lastRead" placeholder="目前看到第幾話/次" min="0">
                 <input type="number" id="latestChapter" placeholder="平台更新至第幾話" min="0">
-            </div>
-            ${dateInputHTML}`;
+            </div>`;
     }
 
     dynamicFields.innerHTML = htmlContent;
@@ -138,10 +131,13 @@ function renderAll() {
     let totalC = 0;
     let totalTWD = 0;
     
-    // 取得今天的日期字串 (格式 YYYY-MM-DD)，用來精準比對下次更新日
     const todayObj = new Date();
     const today = todayObj.getDay(); 
-    const todayDateStr = todayObj.toISOString().split('T')[0];
+    
+    // 修正時區問題，確保日期字串比對正確 (台灣時間)
+    const offset = todayObj.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(todayObj - offset)).toISOString().split('T')[0];
+    const todayDateStr = localISOTime;
     
     const lists = { update: document.getElementById("update-list"), ongoing: document.getElementById("ongoing-list"), completed: document.getElementById("completed-list") };
     if (!lists.ongoing) return;
@@ -163,7 +159,6 @@ function renderAll() {
             ? `狀態：<b style="color: var(--text-main)">✅ 已觀影</b>` 
             : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${item.lastRead || 0}</b> / ${item.latestChapter || 0} ${unit}`;
 
-        // 顯示設定好的日期標籤
         let dateTagHTML = '';
         if (item.customDate) {
             const label = isMovie ? '觀影日' : '下次更新';
@@ -192,18 +187,15 @@ function renderAll() {
         } else {
             if (lists.ongoing) lists.ongoing.appendChild(card.cloneNode(true));
             
-            // 提醒邏輯：只要有未看進度，且（符合週期 或 剛好到了設定的更新日期）
             const hasUnread = Number(item.lastRead || 0) < Number(item.latestChapter || 0);
             
             let isUpdateDay = false;
-            // 1. 週期比對 (限漫畫)
             if (!isVideo && item.updateDayLabel) {
                 const dayMap = {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6};
                 if (dayMap[item.updateDayLabel] === today || item.updateDayLabel === "#十天一次連載") {
                     isUpdateDay = true;
                 }
             }
-            // 2. 具體日期比對 (所有平台適用)
             if (item.customDate && item.customDate <= todayDateStr) {
                 isUpdateDay = true;
             }
