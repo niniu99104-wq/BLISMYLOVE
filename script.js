@@ -1,315 +1,163 @@
-// 👇 👇 👇 霓，請把你在 Google 取得的那串網址貼在下面引號裡面 👇 👇 👇
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1BXE2b1ySLjC3HgG1gSgRlW4cI2Y3PAmkxNu--9-KkF5xp-_isL-yRLeNH7h7vpvRQA/exec'; 
 
 let mediaData = [];
 
-const platformSelect = document.getElementById('platform');
-const dynamicFields = document.getElementById('dynamic-fields');
-const submitBtn = document.getElementById('submit-btn');
-const groupStatusDay = document.getElementById('group-status-day');
-const updateDaySelect = document.getElementById('updateDay');
-const statusSelect = document.getElementById('status');
-const loadingMsg = document.getElementById('loading-msg');
-const dateLabel = document.getElementById('date-label'); 
-
-async function loadData() {
-    if (SCRIPT_URL.includes('請貼上你以')) {
-        alert('請先在 script.js 第一行貼上 Google Apps Script 網址！');
-        return;
-    }
-    try {
-        loadingMsg.style.display = 'block';
-        const response = await fetch(SCRIPT_URL);
-        mediaData = await response.json();
-        mediaData.reverse(); 
-        renderAll();
-    } catch (error) {
-        console.error('無法連線到資料庫', error);
-    } finally {
-        loadingMsg.style.display = 'none';
-    }
+// 日期淨化器：把 "2026-04-01T16:00:00.000Z" 這種髒東西轉成乾淨的 "2026-04-01"
+function cleanDateStr(rawStr) {
+    if (!rawStr) return "";
+    // 取 T 以前的字串，如果是 ISO 格式就會被裁掉後半段
+    return rawStr.split('T')[0]; 
 }
 
-function getPlatformClass(platformName) {
-    switch(platformName) {
+// 推算下次更新日 (排除時區誤差)
+function calculateNextDate(dateStr, cycle) {
+    if (!dateStr || !cycle) return "";
+    let clean = cleanDateStr(dateStr);
+    let parts = clean.split('-');
+    if (parts.length !== 3) return "";
+
+    // 使用整數建立日期，避免時區自動跳轉
+    let d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    
+    if (cycle === '#十天一次連載') {
+        d.setDate(d.getDate() + 10);
+    } else if (cycle.includes('週')) {
+        d.setDate(d.getDate() + 7);
+    } else {
+        return "";
+    }
+
+    let y = d.getFullYear();
+    let m = String(d.getMonth() + 1).padStart(2, '0');
+    let day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+async function loadData() {
+    const loading = document.getElementById('loading-msg');
+    try {
+        loading.style.display = 'block';
+        const response = await fetch(SCRIPT_URL);
+        mediaData = await response.json();
+        mediaData.reverse();
+        renderAll();
+    } catch (e) { alert("讀取雲端失敗"); }
+    finally { loading.style.display = 'none'; }
+}
+
+function getPlatformClass(plat) {
+    switch(plat) {
         case 'bomtoon.tw': return 'plat-bomtoon';
         case 'Webtoon': return 'plat-webtoon';
-        case '鏡文學': return 'plat-mirror';
-        case 'BW電子書': return 'plat-bw';
-        case 'gagaOOlala': return 'plat-gaga';
+        case '實體電影院': return 'plat-vieshow';
         case 'Netflix': return 'plat-netflix';
         case '愛奇藝': return 'plat-iqiyi';
         case 'Disney+': return 'plat-disney';
-        case '實體電影院': return 'plat-vieshow';
+        case 'gagaOOlala': return 'plat-gaga';
         default: return 'plat-mirror';
     }
 }
 
-function updateFormFields() {
-    if (!platformSelect || !dynamicFields) return;
-    
-    const platform = platformSelect.value;
-    const isSubPlatform = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+'].includes(platform);
-    const isVideo = isSubPlatform || platform === '實體電影院';
-    const isMovie = platform === '實體電影院';
-    
-    if (submitBtn) submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
-    
-    if (groupStatusDay) groupStatusDay.style.display = 'flex';
-    if (updateDaySelect) updateDaySelect.style.display = isVideo ? 'none' : 'block';
-    
-    if (statusSelect) {
-        if (isMovie) {
-            statusSelect.innerHTML = '<option value="watched">已觀影</option>';
-        } else {
-            statusSelect.innerHTML = `
-                <option value="ongoing">正在追</option>
-                <option value="completed">已完結 / 封存</option>
-            `;
-        }
-    }
-    
-    // 切換日曆標籤文字
-    if (dateLabel) {
-        dateLabel.textContent = isMovie ? '📅 觀影日期：' : '📅 最新更新日：';
-    }
-    
-    let htmlContent = '';
-
-    if (platform === 'bomtoon.tw') {
-        htmlContent = `
-            <div class="form-group">
-                <input type="number" id="cost" placeholder="每話 幾 C (例: 4)" min="0" required>
-                <input type="number" id="count" placeholder="已購買話數" min="0" required>
-                <input type="number" id="extra" placeholder="額外花費 (幾 C)" value="0" min="0">
-            </div>
-            <div class="form-group">
-                <input type="number" id="lastRead" placeholder="目前看到第幾話/次" min="0">
-                <input type="number" id="latestChapter" placeholder="平台更新至第幾話" min="0">
-            </div>`;
-    } else if (isMovie) {
-        htmlContent = `
-            <div class="form-group">
-                <input type="number" id="cost" placeholder="單張票價 (元)" min="0" required>
-                <input type="number" id="count" placeholder="電影票張數" value="1" min="1" required>
-                <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
-            </div>`;
-    } else if (isSubPlatform) { 
-        htmlContent = `
-            <div class="form-group" style="margin-bottom: 5px;">
-                <input type="number" id="cost" placeholder="此劇額外花費 (通常為 0)" value="0" min="0" required>
-                <input type="hidden" id="count" value="1">
-                <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
-            </div>
-            <div style="color: #888; font-size: 0.85rem; margin-bottom: 15px; padding-left: 5px;">
-                💡 記帳建議：追劇成本預設為 0。若要紀錄月費，可單獨新增一筆「10月月費」即可。
-            </div>
-            <div class="form-group">
-                <input type="number" id="lastRead" placeholder="目前看到第幾集/次" min="0">
-                <input type="number" id="latestChapter" placeholder="平台更新至第幾集" min="0">
-            </div>`;
-    } else { 
-        htmlContent = `
-            <div class="form-group">
-                <input type="number" id="cost" placeholder="單價 (元)" min="0" required>
-                <input type="number" id="count" placeholder="已購話數/本數" min="0" required>
-                <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
-            </div>
-            <div class="form-group">
-                <input type="number" id="lastRead" placeholder="目前看到第幾話/次" min="0">
-                <input type="number" id="latestChapter" placeholder="平台更新至第幾話" min="0">
-            </div>`;
-    }
-
-    dynamicFields.innerHTML = htmlContent;
-}
-
-if (platformSelect) platformSelect.addEventListener('change', updateFormFields);
-updateFormFields();
-
 function renderAll() {
-    let totalC = 0;
-    let totalTWD = 0;
-    
-    // 取得台灣時間的今天日期字串 (YYYY-MM-DD)
-    const todayObj = new Date();
-    const todayDayOfWeek = todayObj.getDay(); 
-    const offset = todayObj.getTimezoneOffset() * 60000;
-    const todayDateStr = (new Date(todayObj - offset)).toISOString().split('T')[0];
-    
-    const lists = { update: document.getElementById("update-list"), ongoing: document.getElementById("ongoing-list"), completed: document.getElementById("completed-list") };
-    if (!lists.ongoing) return;
-    Object.values(lists).forEach(l => { if (l) l.innerHTML = ""; });
-    
-    let hasUpdates = false;
+    // 取得今天台灣時間
+    let now = new Date();
+    let todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0');
 
-    mediaData.forEach((item) => {
-        const itemTotal = (Number(item.cost) * Number(item.count)) + Number(item.extra);
+    const lists = { 
+        update: document.getElementById("update-list"), 
+        ongoing: document.getElementById("ongoing-list"), 
+        completed: document.getElementById("completed-list") 
+    };
+    Object.values(lists).forEach(l => l.innerHTML = "");
+
+    let totalC = 0, totalTWD = 0, hasUpdates = false;
+
+    mediaData.forEach(item => {
         const isBomtoon = item.platform === 'bomtoon.tw';
-        const isVideo = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+', '實體電影院'].includes(item.platform);
         const isMovie = item.platform === '實體電影院';
-        const unit = isVideo ? '集' : '話';
+        const itemTotal = (Number(item.cost) * Number(item.count)) + Number(item.extra);
         
-        if (isBomtoon) totalC += itemTotal;
-        else totalTWD += itemTotal;
+        if (isBomtoon) totalC += itemTotal; else totalTWD += itemTotal;
 
-        let progressText = isMovie 
-            ? `狀態：<b style="color: var(--text-main)">✅ 已觀影</b>` 
-            : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${item.lastRead || 0}</b> / ${item.latestChapter || 0} ${unit}`;
+        let cleanDate = cleanDateStr(item.customDate);
+        let nextDate = calculateNextDate(cleanDate, item.updateDayLabel);
 
-        // 核心邏輯：防時區蟲的下次更新日計算
-        let nextDateStr = '';
-        if (item.customDate && !isMovie && item.updateDayLabel) {
-            let parts = item.customDate.split('-');
-            if (parts.length === 3) {
-                let d = new Date(parts[0], parts[1] - 1, parts[2]); 
-                if (item.updateDayLabel === '#十天一次連載') {
-                    d.setDate(d.getDate() + 10);
-                } else if (item.updateDayLabel.includes('週')) {
-                    d.setDate(d.getDate() + 7);
-                }
-                
-                let nextY = d.getFullYear();
-                let nextM = String(d.getMonth() + 1).padStart(2, '0');
-                let nextD = String(d.getDate()).padStart(2, '0');
-                nextDateStr = `${nextY}-${nextM}-${nextD}`;
-            }
-        }
-
-        // 渲染日期標籤
-        let dateTagHTML = '';
-        if (isMovie && item.customDate) {
-            dateTagHTML = `<br><small style="color:#aaa;">🗓️ 觀影日：${item.customDate}</small>`;
-        } else if (!isMovie && item.customDate) {
-            dateTagHTML = `<br><small style="color:#aaa;">🗓️ 最新更新：${item.customDate}</small>`;
-            if (nextDateStr) {
-                dateTagHTML += `<br><small style="color:var(--accent-c); font-weight:bold;">⏰ 下次更新：${nextDateStr}</small>`;
-            }
+        let dateHTML = isMovie ? `觀影日：${cleanDate}` : `最新更新：${cleanDate}`;
+        if (nextDate && !isMovie) {
+            dateHTML += `<br><span style="color:#f70c6b; font-weight:bold;">⏰ 下次更新：${nextDate}</span>`;
         }
 
         const card = document.createElement('li');
         card.className = 'card';
         card.innerHTML = `
             <button class="delete-btn" onclick="deleteItem('${item.title}')">×</button>
-            <span class="plat-tag ${getPlatformClass(item.platform)}">${item.platform}</span><br>
+            <span class="plat-tag ${getPlatformClass(item.platform)}">${item.platform}</span>
             <span class="card-title">${item.title}</span>
-            ${(!isVideo && item.updateDayLabel) ? `<span class="update-tag">${item.updateDayLabel}</span>` : ''}
-            <div class="card-details">
-                ${progressText}
-                ${dateTagHTML}<br>
-                <small style="color:#666; display:inline-block; margin-top:5px;">${isMovie ? '電影票張數' : '已購基礎數'}：${item.count}</small>
+            ${item.updateDayLabel ? `<span class="update-tag">${item.updateDayLabel}</span>` : ''}
+            <div style="margin: 12px 0; font-size: 0.95rem;">
+                進度：${item.lastRead} / ${item.latestChapter}<br>
+                <small style="color:#888;">${dateHTML}</small>
             </div>
-            <div class="card-cost ${isBomtoon ? 'cost-c' : 'cost-twd'}">
-                ${isBomtoon ? `總花費：${itemTotal} C` : `總支出：${itemTotal} 元`}
+            <div style="text-align:right; font-weight:bold; font-size:1.1rem; color:${isBomtoon?'#f70c6b':'#4caf50'}">
+                ${isBomtoon ? itemTotal + ' C' : itemTotal + ' 元'}
             </div>
         `;
 
-        if (item.status === "completed" || item.status === "watched" || isMovie) {
-            if (lists.completed) lists.completed.appendChild(card);
+        if (item.status === 'completed' || item.status === 'watched' || isMovie) {
+            lists.completed.appendChild(card);
         } else {
-            if (lists.ongoing) lists.ongoing.appendChild(card.cloneNode(true));
-            
-            const hasUnread = Number(item.lastRead || 0) < Number(item.latestChapter || 0);
-            let isUpdateDay = false;
-            
-            // 提醒判斷
-            if (nextDateStr && todayDateStr >= nextDateStr) {
-                isUpdateDay = true;
-            }
-            if (!item.customDate && item.updateDayLabel && !isVideo) {
-                const dayMap = {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6};
-                if (dayMap[item.updateDayLabel] === todayDayOfWeek) {
-                    isUpdateDay = true;
-                }
-            }
-
-            if (isUpdateDay && hasUnread) {
-                if (lists.update) lists.update.appendChild(card.cloneNode(true));
+            lists.ongoing.appendChild(card.cloneNode(true));
+            // 提醒邏輯：下次更新日到了 且 有新進度
+            if (nextDate && todayStr >= nextDate && Number(item.lastRead) < Number(item.latestChapter)) {
+                lists.update.appendChild(card.cloneNode(true));
                 hasUpdates = true;
             }
         }
     });
 
-    const totalCElement = document.getElementById("total-c-coins");
-    const totalTWDElement = document.getElementById("total-twd");
-    const updateAlert = document.getElementById("update-alert");
-
-    if (totalCElement) totalCElement.textContent = totalC;
-    if (totalTWDElement) totalTWDElement.textContent = totalTWD;
-    if (updateAlert) updateAlert.classList.toggle("hidden", !hasUpdates);
+    document.getElementById("total-c-coins").textContent = totalC;
+    document.getElementById("total-twd").textContent = totalTWD;
+    document.getElementById("update-alert").classList.toggle("hidden", !hasUpdates);
 }
 
-const mediaForm = document.getElementById('media-form');
-if (mediaForm) {
-    mediaForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const title = document.getElementById('title').value.trim();
-        const platform = platformSelect.value;
-        const isVideo = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+', '實體電影院'].includes(platform);
-        const isMovie = platform === '實體電影院';
-        
-        const lastReadVal = document.getElementById('lastRead')?.value || 0;
-        const latestChapterVal = document.getElementById('latestChapter')?.value || 0;
-        const customDateVal = document.getElementById('customDate')?.value || "";
+// 監聽存檔
+document.getElementById('media-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = document.getElementById('submit-btn');
+    const formData = {
+        title: document.getElementById('title').value.trim(),
+        platform: document.getElementById('platform').value,
+        status: document.getElementById('status').value,
+        updateDayLabel: document.getElementById('updateDay').value,
+        cost: document.getElementById('cost')?.value || 0,
+        count: document.getElementById('count')?.value || 1,
+        extra: document.getElementById('extra')?.value || 0,
+        lastRead: document.getElementById('lastRead')?.value || 0,
+        latestChapter: document.getElementById('latestChapter')?.value || 0,
+        customDate: document.getElementById('customDate').value
+    };
 
-        const newItem = {
-            title: title,
-            platform: platform,
-            status: isMovie ? 'watched' : (statusSelect ? statusSelect.value : 'ongoing'),
-            updateDayLabel: isVideo ? null : (updateDaySelect ? updateDaySelect.value : null),
-            cost: document.getElementById('cost')?.value || 0,
-            count: document.getElementById('count')?.value || 1,
-            extra: document.getElementById('extra')?.value || 0,
-            lastRead: isMovie ? 1 : lastReadVal,
-            latestChapter: isMovie ? 1 : latestChapterVal,
-            customDate: customDateVal
-        };
+    submitBtn.disabled = true;
+    submitBtn.textContent = "雲端同步中...";
 
-        submitBtn.textContent = '雲端同步中...';
-        submitBtn.disabled = true;
-
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify(newItem)
-            });
-            
-            const existingIndex = mediaData.findIndex(item => item.title === title);
-            if (existingIndex !== -1) mediaData[existingIndex] = newItem;
-            else mediaData.unshift(newItem); 
-            
-            renderAll();
-            e.target.reset();
-            updateFormFields(); 
-        } catch (error) {
-            alert('儲存失敗，請確認網路連線。');
-        } finally {
-            submitBtn.textContent = '確認儲存';
-            submitBtn.disabled = false;
-        }
-    });
-}
+    try {
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(formData) });
+        await loadData();
+        e.target.reset();
+    } catch (e) { alert("儲存失敗"); }
+    finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "確認儲存";
+    }
+});
 
 async function deleteItem(title) {
-    if(!confirm('確定要將這筆紀錄從雲端刪除嗎？')) return;
-    
+    if (!confirm(`確定要刪除「${title}」嗎？`)) return;
     try {
-        loadingMsg.style.display = 'block';
-        loadingMsg.textContent = '🗑️ 正在從雲端刪除...';
-        
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'delete', title: title })
-        });
-        
-        mediaData = mediaData.filter(item => item.title !== title);
-        renderAll();
-    } catch (error) {
-        alert('刪除失敗');
-    } finally {
-        loadingMsg.style.display = 'none';
-        loadingMsg.textContent = '⏳ 正在與 Google 資料庫同步中，請稍候...';
-    }
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', title: title }) });
+        await loadData();
+    } catch (e) { alert("刪除失敗"); }
 }
 
+// 初始載入
 loadData();
