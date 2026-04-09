@@ -214,7 +214,7 @@ function renderAll() {
             <div class="card-details">
                 ${progressText}
                 ${dateTagHTML}
-                <div style="margin-top:8px;"><small style="color:#777;">${isMovie ? '電影票張數' : '已購話/張數'}：${item.count}</small></div>
+                <div style="margin-top:8px;"><small style="color:#777;">${isMovie ? '電影票張數' : '已購話/集數'}：${item.count}</small></div>
             </div>
             <div class="card-cost ${isBomtoon ? 'cost-c' : 'cost-twd'}">
                 ${isBomtoon ? `總花費：${itemTotal} C` : `總支出：${itemTotal} 元`}
