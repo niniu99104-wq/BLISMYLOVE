@@ -3,73 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>追漫小管家 | 填坑紀錄</title>
+    <title>BL 追漫管家 | 專業動態版</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
         <h1>追漫小管家</h1>
         <div class="stats">
-            <p>總投資 C 幣：<span id="total-coins" class="highlight">0</span> C</p>
+            <p>總投資 C 幣：<span id="total-c-coins" class="highlight-c">0</span> C</p>
+            <p>總投資金額：<span id="total-twd" class="highlight-twd">0</span> 元</p>
         </div>
     </header>
 
     <main>
         <section class="form-section">
-            <h2>➕ 新增作品 / 填坑紀錄</h2>
+            <h2>➕ 紀錄更新 (同名將自動覆蓋舊進度)</h2>
             <form id="media-form">
                 <div class="form-group">
-                    <input type="text" id="title" placeholder="作品名稱 (如: Jinx)" required>
-                    <input type="text" id="platform" placeholder="平台 (如: Bomtoon)" required>
+                    <input type="text" id="title" placeholder="作品名稱 (必填)" required>
+                    <select id="platform">
+                        <option value="bomtoon.tw">bomtoon.tw</option>
+                        <option value="Webtoon">Webtoon</option>
+                        <option value="鏡文學">鏡文學</option>
+                        <option value="BW電子書">BW電子書</option>
+                        <option value="gagaOOlala">gagaOOlala</option>
+                        <option value="Netflix">Netflix</option>
+                        <option value="電影院（實體）">電影院（實體）</option>
+                    </select>
                 </div>
+
+                <div id="dynamic-fields" class="form-group"></div>
+
                 <div class="form-group">
                     <select id="status">
                         <option value="ongoing">正在追</option>
                         <option value="completed">已完結 / 封存</option>
                     </select>
                     <select id="updateDay">
-    <option value="#不定期連載">#不定期連載</option>
-    <option value="#週一連載">#週一連載</option>
-    <option value="#週二連載">#週二連載</option>
-    <option value="#週三連載">#週三連載</option>
-    <option value="#週四連載">#週四連載</option>
-    <option value="#週五連載">#週五連載</option>
-    <option value="#週六連載">#週六連載</option>
-    <option value="#週日連載">#週日連載</option>
-    <option value="#十天一次連載">#十天一次連載</option>
-    <option value="#已完結">#已完結</option>
-</select>
+                        <option value="#週一連載">#週一連載</option>
+                        <option value="#週二連載">#週二連載</option>
+                        <option value="#週三連載">#週三連載</option>
+                        <option value="#週四連載">#週四連載</option>
+                        <option value="#週五連載">#週五連載</option>
+                        <option value="#週六連載">#週六連載</option>
+                        <option value="#週日連載">#週日連載</option>
+                        <option value="#十天一次連載">#十天一次連載</option>
+                        <option value="#不定期連載">#不定期連載</option>
+                        <option value="#已完結">#已完結</option>
+                    </select>
                 </div>
+
                 <div class="form-group">
-                    <input type="number" id="chapterCost" placeholder="每話多少C幣" value="4" min="0" required>
-                    <input type="number" id="purchasedChapters" placeholder="已購買話數" min="0" required>
-                    <input type="number" id="extraCost" placeholder="額外花費C幣 (特輯/外傳等)" value="0" min="0">
+                    <input type="number" id="lastRead" placeholder="目前看到第幾話/次" min="0" required>
+                    <input type="number" id="latestChapter" placeholder="平台更新至第幾話" min="0" required>
                 </div>
-                <div class="form-group">
-                    <input type="number" id="lastRead" placeholder="你目前看到第幾話" min="0" required>
-                    <input type="number" id="latestChapter" placeholder="平台最新到第幾話" min="0" required>
-                </div>
-                <button type="submit" class="btn-submit">加入清單</button>
+
+                <button type="submit" class="btn-submit">確認儲存</button>
             </form>
         </section>
 
         <section id="update-alert" class="alert-section hidden">
-            <h2>🔥 今日更新未看！快去補進度！</h2>
+            <h2>🔥 今日更新提醒 (有新進度未看)</h2>
             <ul id="update-list" class="card-list"></ul>
         </section>
 
         <section class="ongoing-section">
-            <h2>📖 正在追 & 未完結</h2>
+            <h2>📖 追坑中</h2>
             <ul id="ongoing-list" class="card-list"></ul>
         </section>
 
         <section class="completed-section">
-            <h2>✅ 已完結 & 戰績封存</h2>
+            <h2>✅ 已完結戰績</h2>
             <ul id="completed-list" class="card-list"></ul>
         </section>
         
-        <div style="text-align: center; margin-top: 50px; margin-bottom: 20px;">
-            <button id="clear-data" class="btn-clear">清空所有本機資料</button>
+        <div style="text-align: center; padding: 40px 0;">
+            <button id="clear-data" class="btn-clear">清空所有資料重來</button>
         </div>
     </main>
 
