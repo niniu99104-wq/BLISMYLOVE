@@ -26,7 +26,6 @@ input[type="date"] { background: #333; border: 1px solid #444; color-scheme: dar
 .btn-submit { width: 100%; padding: 16px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; transition: 0.2s; margin-top: 10px; }
 .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* 平台顏色 */
 .plat-bomtoon { background-color: var(--accent-c) !important; color: #fff !important; } 
 .plat-webtoon { background-color: #00dc64 !important; color: #000 !important; } 
 .plat-mirror { background-color: #1a1a1a !important; border: 1px solid #555; color: #fff !important; } 
