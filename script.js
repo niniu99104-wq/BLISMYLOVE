@@ -1,5 +1,5 @@
 // 👇 👇 👇 霓，請把你在 Google 取得的那串網址貼在下面引號裡面 👇 👇 👇
-const SCRIPT_URL = '請貼上你以/exec結尾的網址'; 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1BXE2b1ySLjC3HgG1gSgRlW4cI2Y3PAmkxNu--9-KkF5xp-_isL-yRLeNH7h7vpvRQA/exec'; 
 
 let mediaData = [];
 
