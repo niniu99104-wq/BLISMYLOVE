@@ -3,6 +3,7 @@
     --card-bg: #161616;
     --accent-c: #f70c6b; 
     --accent-twd: #4caf50;
+    --accent-merch: #ff9800;
     --text-main: #f0f0f0;
     --text-sub: #888;
     --border-color: #222;
@@ -10,9 +11,11 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); padding: 15px; max-width: 900px; margin: 0 auto; line-height: 1.6; }
-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 25px; }
+header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 25px; }
+.stats { display: flex; flex-direction: column; gap: 5px; text-align: right; }
 .highlight-c { color: var(--accent-c); font-size: 1.8rem; font-weight: bold; }
 .highlight-twd { color: var(--accent-twd); font-size: 1.8rem; font-weight: bold; }
+.highlight-merch { color: var(--accent-merch); font-size: 1.8rem; font-weight: bold; }
 h2 { font-size: 1.2rem; margin-bottom: 15px; color: var(--text-sub); border-left: 4px solid var(--accent-c); padding-left: 10px; }
 
 .form-section { background: #111; padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid var(--border-color); }
@@ -35,6 +38,7 @@ input[type="date"] { background: #333; border: 1px solid #444; color-scheme: dar
 .plat-iqiyi { background-color: #00cc00 !important; color: #fff !important; } 
 .plat-disney { background-color: #113CCF !important; color: #fff !important; } 
 .plat-vieshow { background-color: #003366 !important; border: 1px solid #e50914; color: #fff !important; } 
+.plat-merch { background-color: var(--accent-merch) !important; color: #fff !important; }
 
 .loading-box { text-align: center; background: #222; padding: 15px; border-radius: 8px; margin-bottom: 30px; color: var(--accent-c); font-weight: bold; display: none; }
 .card-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 40px; }
@@ -48,8 +52,12 @@ input[type="date"] { background: #333; border: 1px solid #444; color-scheme: dar
 .hidden { display: none; }
 .alert-section { background: rgba(247, 12, 107, 0.05); padding: 20px; border-radius: 12px; border: 1px dashed var(--accent-c); margin-bottom: 40px; }
 
+.merch-section { margin-bottom: 40px; }
+.merch-section h2 { border-left: 4px solid var(--accent-merch); }
+
 @media (max-width: 600px) { 
     header { flex-direction: column; align-items: flex-start; } 
+    .stats { text-align: left; margin-top: 10px; }
     .form-group { gap: 6px; } 
     input, select { padding: 12px 6px; font-size: 0.9rem; }
     .date-input-group span { font-size: 0.95rem; }
