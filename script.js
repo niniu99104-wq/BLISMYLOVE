@@ -13,8 +13,8 @@ const loadingMsg = document.getElementById('loading-msg');
 const dateLabel = document.getElementById('date-label'); 
 
 async function loadData() {
-    if (SCRIPT_URL.includes('請在這裡貼上')) {
-        alert('你還沒有貼上 Google Apps Script 網址喔！');
+    if (SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbx1BXE2b1ySLjC3HgG1gSgRlW4cI2Y3PAmkxNu--9-KkF5xp-_isL-yRLeNH7h7vpvRQA/exec')) {
+        alert('https://script.google.com/macros/s/AKfycbx1BXE2b1ySLjC3HgG1gSgRlW4cI2Y3PAmkxNu--9-KkF5xp-_isL-yRLeNH7h7vpvRQA/exec');
         return;
     }
     try {
