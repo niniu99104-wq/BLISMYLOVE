@@ -1,16 +1,7 @@
-let mediaData = JSON.parse(localStorage.getItem('bl_tracker_data')) || [];
+// 👇 👇 👇 霓，請把你在 Google 取得的那串網址貼在下面引號裡面 👇 👇 👇
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuOxN81iU7oqnto_y6FQ9K3KlfuVnLD1DTUoFxXDZUUMZKeqyNLs9r3T0h7VzFnmReiQ/exec'; 
 
-// 【資料自動校正】把舊的「電影院（實體）」默默改成「實體電影院」，保持資料庫乾淨
-let needsSave = false;
-mediaData.forEach(item => {
-    if (item.platform === '電影院（實體）') {
-        item.platform = '實體電影院';
-        needsSave = true;
-    }
-});
-if (needsSave) {
-    localStorage.setItem('bl_tracker_data', JSON.stringify(mediaData));
-}
+let mediaData = [];
 
 const platformSelect = document.getElementById('platform');
 const dynamicFields = document.getElementById('dynamic-fields');
@@ -18,6 +9,27 @@ const submitBtn = document.getElementById('submit-btn');
 const groupStatusDay = document.getElementById('group-status-day');
 const updateDaySelect = document.getElementById('updateDay');
 const statusSelect = document.getElementById('status');
+const loadingMsg = document.getElementById('loading-msg');
+
+// 初始讀取 Google 試算表資料
+async function loadData() {
+    if (SCRIPT_URL.includes('請在這裡貼上')) {
+        alert('你還沒有貼上 Google Apps Script 網址喔！');
+        return;
+    }
+    try {
+        loadingMsg.style.display = 'block';
+        const response = await fetch(SCRIPT_URL);
+        mediaData = await response.json();
+        // 陣列反轉，讓試算表最新的資料排在上面
+        mediaData.reverse(); 
+        renderAll();
+    } catch (error) {
+        alert('無法連線到資料庫，請檢查網址或網路狀態。');
+    } finally {
+        loadingMsg.style.display = 'none';
+    }
+}
 
 function getPlatformClass(platformName) {
     switch(platformName) {
@@ -27,21 +39,23 @@ function getPlatformClass(platformName) {
         case 'BW電子書': return 'plat-bw';
         case 'gagaOOlala': return 'plat-gaga';
         case 'Netflix': return 'plat-netflix';
+        case '愛奇藝': return 'plat-iqiyi';
+        case 'Disney+': return 'plat-disney';
         case '實體電影院': return 'plat-vieshow';
         default: return 'plat-mirror';
     }
 }
 
 function updateFormFields() {
-    if (!platformSelect || !dynamicFields) return; // 防禦：HTML沒準備好就不執行，絕不當機
+    if (!platformSelect || !dynamicFields) return;
     
     const platform = platformSelect.value;
-    const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(platform);
+    const isSubPlatform = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+'].includes(platform);
+    const isVideo = isSubPlatform || platform === '實體電影院';
     const isMovie = platform === '實體電影院';
     
     if (submitBtn) submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
     
-    // 防禦：確認標籤存在才操作
     if (groupStatusDay) groupStatusDay.style.display = 'flex';
     if (updateDaySelect) updateDaySelect.style.display = isVideo ? 'none' : 'block';
     
@@ -76,12 +90,15 @@ function updateFormFields() {
                 <input type="number" id="count" placeholder="電影票張數" value="1" min="1" required>
                 <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
             </div>`;
-    } else if (isVideo) { 
+    } else if (isSubPlatform) { 
         htmlContent = `
-            <div class="form-group">
-                <input type="number" id="cost" placeholder="月/年費支出 (元)" value="0" min="0" required>
+            <div class="form-group" style="margin-bottom: 5px;">
+                <input type="number" id="cost" placeholder="此劇額外花費 (通常為 0)" value="0" min="0" required>
                 <input type="hidden" id="count" value="1">
                 <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
+            </div>
+            <div style="color: #888; font-size: 0.85rem; margin-bottom: 15px; padding-left: 5px;">
+                💡 記帳建議：追劇成本預設為 0 以免重複計算。若要紀錄月費，可單獨新增一筆「10月月費」即可。
             </div>
             <div class="form-group">
                 <input type="number" id="lastRead" placeholder="目前看到第幾集/次" min="0">
@@ -103,37 +120,24 @@ function updateFormFields() {
     dynamicFields.innerHTML = htmlContent;
 }
 
-if (platformSelect) {
-    platformSelect.addEventListener('change', updateFormFields);
-}
+if (platformSelect) platformSelect.addEventListener('change', updateFormFields);
 updateFormFields();
-
-function saveData() {
-    localStorage.setItem('bl_tracker_data', JSON.stringify(mediaData));
-    renderAll();
-}
 
 function renderAll() {
     let totalC = 0;
     let totalTWD = 0;
     const today = new Date().getDay();
     
-    const lists = { 
-        update: document.getElementById("update-list"), 
-        ongoing: document.getElementById("ongoing-list"), 
-        completed: document.getElementById("completed-list") 
-    };
-    
-    // 防禦：如果畫面還沒載入列表就不執行
+    const lists = { update: document.getElementById("update-list"), ongoing: document.getElementById("ongoing-list"), completed: document.getElementById("completed-list") };
     if (!lists.ongoing) return;
-
     Object.values(lists).forEach(l => { if (l) l.innerHTML = ""; });
+    
     let hasUpdates = false;
 
-    mediaData.forEach((item, index) => {
+    mediaData.forEach((item) => {
         const itemTotal = (Number(item.cost) * Number(item.count)) + Number(item.extra);
         const isBomtoon = item.platform === 'bomtoon.tw';
-        const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(item.platform);
+        const isVideo = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+', '實體電影院'].includes(item.platform);
         const isMovie = item.platform === '實體電影院';
         const unit = isVideo ? '集' : '話';
         
@@ -146,14 +150,15 @@ function renderAll() {
 
         const card = document.createElement('li');
         card.className = 'card';
+        // 因為資料現在由試算表主導，我們透過 title 當作刪除的依據
         card.innerHTML = `
-            <button class="delete-btn" onclick="deleteItem(${index})">×</button>
+            <button class="delete-btn" onclick="deleteItem('${item.title}')">×</button>
             <span class="plat-tag ${getPlatformClass(item.platform)}">${item.platform}</span><br>
             <span class="card-title">${item.title}</span>
             ${(!isVideo && item.updateDayLabel) ? `<span class="update-tag">${item.updateDayLabel}</span>` : ''}
             <div class="card-details">
                 ${progressText}<br>
-                <small style="color:#666">已購基礎數/張數：${item.count}</small>
+                <small style="color:#666">${isMovie ? '電影票張數' : '已購基礎數'}：${item.count}</small>
             </div>
             <div class="card-cost ${isBomtoon ? 'cost-c' : 'cost-twd'}">
                 ${isBomtoon ? `總花費：${itemTotal} C` : `總支出：${itemTotal} 元`}
@@ -185,13 +190,14 @@ function renderAll() {
     if (updateAlert) updateAlert.classList.toggle("hidden", !hasUpdates);
 }
 
+// 送出表單並同步至雲端
 const mediaForm = document.getElementById('media-form');
 if (mediaForm) {
-    mediaForm.addEventListener('submit', (e) => {
+    mediaForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('title').value.trim();
         const platform = platformSelect.value;
-        const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(platform);
+        const isVideo = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+', '實體電影院'].includes(platform);
         const isMovie = platform === '實體電影院';
         
         const lastReadVal = document.getElementById('lastRead')?.value || 0;
@@ -203,31 +209,61 @@ if (mediaForm) {
             status: isMovie ? 'watched' : (statusSelect ? statusSelect.value : 'ongoing'),
             updateDayLabel: isVideo ? null : (updateDaySelect ? updateDaySelect.value : null),
             cost: document.getElementById('cost')?.value || 0,
-            count: document.getElementById('count')?.value || 0,
+            count: document.getElementById('count')?.value || 1,
             extra: document.getElementById('extra')?.value || 0,
             lastRead: isMovie ? 1 : lastReadVal,
             latestChapter: isMovie ? 1 : latestChapterVal
         };
 
-        const existingIndex = mediaData.findIndex(item => item.title === title);
-        if (existingIndex !== -1) mediaData[existingIndex] = newItem;
-        else mediaData.unshift(newItem); 
+        // UI 狀態改變：提示正在儲存
+        submitBtn.textContent = '雲端同步中...';
+        submitBtn.disabled = true;
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(newItem)
+            });
+            
+            // 寫入成功後更新本地畫面
+            const existingIndex = mediaData.findIndex(item => item.title === title);
+            if (existingIndex !== -1) mediaData[existingIndex] = newItem;
+            else mediaData.unshift(newItem); 
+            
+            renderAll();
+            e.target.reset();
+            updateFormFields(); 
+        } catch (error) {
+            alert('儲存失敗，請確認網路連線。');
+        } finally {
+            submitBtn.textContent = '確認儲存';
+            submitBtn.disabled = false;
+        }
+    });
+}
+
+// 刪除雲端資料
+async function deleteItem(title) {
+    if(!confirm('確定要將這筆紀錄從雲端刪除嗎？')) return;
+    
+    try {
+        loadingMsg.style.display = 'block';
+        loadingMsg.textContent = '🗑️ 正在從雲端刪除...';
         
-        saveData();
-        e.target.reset();
-        updateFormFields(); 
-    });
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'delete', title: title })
+        });
+        
+        mediaData = mediaData.filter(item => item.title !== title);
+        renderAll();
+    } catch (error) {
+        alert('刪除失敗');
+    } finally {
+        loadingMsg.style.display = 'none';
+        loadingMsg.textContent = '⏳ 正在與 Google 資料庫同步中，請稍候...';
+    }
 }
 
-function deleteItem(index) {
-    if(confirm('要刪除這筆紀錄嗎？')) { mediaData.splice(index, 1); saveData(); }
-}
-
-const clearBtn = document.getElementById('clear-data');
-if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-        if(confirm('注意：清空後資料無法恢復，確定嗎？')) { localStorage.removeItem('bl_tracker_data'); location.reload(); }
-    });
-}
-
-renderAll();
+// 啟動程式：讀取資料庫
+loadData();
