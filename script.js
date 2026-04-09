@@ -1,5 +1,5 @@
 // 👇 👇 👇 霓，記得貼上妳的 Google Apps Script 網址 👇 👇 👇
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiwqpt3fOSw6REOhxWn0NaAYfrsEdbW9ISttjrvAi_FsOMNQt5kRE695iygm2macl3BQ/exec'; 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyt6BLxmXBS_ndxLfq4tV5uH8u8_hlwhBMHY9rIUUrVA9CcUWceZ4IeRHao-h_OQmKvNw/exec'; 
 
 let mediaData = [];
 
