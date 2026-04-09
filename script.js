@@ -12,7 +12,7 @@ const statusSelect = document.getElementById('status');
 const loadingMsg = document.getElementById('loading-msg');
 const dateLabel = document.getElementById('date-label'); 
 
-// 台灣時間轉換器：處理 Google 傳來的 T16:00:00.000Z，轉成精準的 YYYY-MM-DD
+// 台灣時間轉換器
 function formatTaiwanDate(isoStr) {
     if (!isoStr) return "";
     if (!isoStr.includes('T')) return isoStr; 
@@ -103,13 +103,13 @@ function updateFormFields() {
         }
     }
     
+    // 將所有影音平台統一改為「觀影日」
     if (dateLabel) {
-        dateLabel.textContent = isMovie ? '📅 觀影日期：' : '📅 最新更新日：';
+        dateLabel.textContent = isVideo ? '📅 觀影日：' : '📅 最新更新日：';
     }
     
     let htmlContent = '';
 
-    // 縮短手機上的 placeholder 以免被切斷
     if (platform === 'bomtoon.tw') {
         htmlContent = `
             <div class="form-group">
@@ -190,14 +190,14 @@ function renderAll() {
             ? `狀態：<b style="color: var(--text-main)">✅ 已觀影</b>` 
             : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${item.lastRead || 0}</b> / ${item.latestChapter || 0} ${unit}`;
 
-        // 核心邏輯：防爆日期計算與格式化
         let cleanDate = formatTaiwanDate(item.customDate);
         let nextDateStr = calculateNextDate(cleanDate, item.updateDayLabel);
 
+        // 卡片上的日期顯示邏輯：影音平台全部顯示為「觀影日」
         let dateTagHTML = '';
-        if (isMovie && cleanDate) {
+        if (isVideo && cleanDate) {
             dateTagHTML = `<div style="margin-top: 8px;"><small style="color:#aaa;">🗓️ 觀影日：${cleanDate}</small></div>`;
-        } else if (!isMovie && cleanDate) {
+        } else if (!isVideo && cleanDate) {
             dateTagHTML = `<div style="margin-top: 8px;"><small style="color:#aaa;">🗓️ 最新更新：${cleanDate}</small></div>`;
             if (nextDateStr) {
                 dateTagHTML += `<div><small style="color:var(--accent-c); font-weight:bold; font-size:0.95rem;">⏰ 下次更新：${nextDateStr}</small></div>`;
