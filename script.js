@@ -3,13 +3,9 @@ let mediaData = JSON.parse(localStorage.getItem('bl_tracker_data')) || [];
 const platformSelect = document.getElementById('platform');
 const dynamicFields = document.getElementById('dynamic-fields');
 const submitBtn = document.getElementById('submit-btn');
-
 const groupStatusDay = document.getElementById('group-status-day');
-const groupProgress = document.getElementById('group-progress');
 const updateDaySelect = document.getElementById('updateDay');
 const statusSelect = document.getElementById('status');
-const lastReadInput = document.getElementById('lastRead');
-const latestChapterInput = document.getElementById('latestChapter');
 
 // 取得平台對應的 CSS class
 function getPlatformClass(platformName) {
@@ -25,61 +21,75 @@ function getPlatformClass(platformName) {
     }
 }
 
-// 根據平台動態切換輸入欄位、按鈕顏色、單位與連載日
+// 根據平台動態生成對應的 HTML 輸入框與選單狀態
 function updateFormFields() {
     const platform = platformSelect.value;
     const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(platform);
     const isMovie = platform === '實體電影院';
     
-    // 按鈕跟著變色
+    // 按鈕變色
     submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
     
-    // 電影院特殊處理：不顯示連載日、不顯示進度、狀態強制設為完結
+    // 狀態與連載日的顯示邏輯
     if (isMovie) {
-        groupStatusDay.style.display = 'none';
-        groupProgress.style.display = 'none';
-        statusSelect.value = 'completed';
+        groupStatusDay.style.display = 'flex';
+        updateDaySelect.style.display = 'none'; // 隱藏連載日
+        statusSelect.innerHTML = '<option value="watched">已觀影</option>'; // 鎖定狀態為已觀影
     } else {
         groupStatusDay.style.display = 'flex';
-        groupProgress.style.display = 'flex';
-        
-        // 影視平台隱藏連載日，並改變進度欄位文字
-        if (isVideo) {
-            updateDaySelect.style.display = 'none';
-            lastReadInput.placeholder = "目前看到第幾集/次";
-            latestChapterInput.placeholder = "平台更新至第幾集";
-        } else {
-            updateDaySelect.style.display = 'block';
-            lastReadInput.placeholder = "目前看到第幾話/次";
-            latestChapterInput.placeholder = "平台更新至第幾話";
-        }
+        updateDaySelect.style.display = isVideo ? 'none' : 'block'; // 影視類隱藏連載日
+        statusSelect.innerHTML = `
+            <option value="ongoing">正在追</option>
+            <option value="completed">已完結 / 封存</option>
+        `; // 恢復一般狀態選項
     }
     
+    // 動態生成輸入欄位
+    let htmlContent = '';
+
     if (platform === 'bomtoon.tw') {
-        dynamicFields.innerHTML = `
-            <input type="number" id="cost" placeholder="每話 幾 C (例: 4)" min="0" required>
-            <input type="number" id="count" placeholder="已購買話數" min="0" required>
-            <input type="number" id="extra" placeholder="額外花費 (幾 C)" value="0" min="0">
-        `;
+        htmlContent = `
+            <div class="form-group">
+                <input type="number" id="cost" placeholder="每話 幾 C (例: 4)" min="0" required>
+                <input type="number" id="count" placeholder="已購買話數" min="0" required>
+                <input type="number" id="extra" placeholder="額外花費 (幾 C)" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <input type="number" id="lastRead" placeholder="目前看到第幾話/次" min="0">
+                <input type="number" id="latestChapter" placeholder="平台更新至第幾話" min="0">
+            </div>`;
     } else if (isMovie) {
-        dynamicFields.innerHTML = `
-            <input type="number" id="cost" placeholder="單張票價 (元)" min="0" required>
-            <input type="number" id="count" placeholder="觀看張數" value="1" min="1" required>
-            <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
-        `;
-    } else if (['Netflix', 'gagaOOlala'].includes(platform)) {
-        dynamicFields.innerHTML = `
-            <input type="number" id="cost" placeholder="月/年費支出 (元)" value="0" min="0" required>
-            <input type="hidden" id="count" value="1">
-            <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
-        `;
-    } else {
-        dynamicFields.innerHTML = `
-            <input type="number" id="cost" placeholder="單價 (元)" min="0" required>
-            <input type="number" id="count" placeholder="已購話數/本數" min="0" required>
-            <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
-        `;
+        htmlContent = `
+            <div class="form-group">
+                <input type="number" id="cost" placeholder="單張票價 (元)" min="0" required>
+                <input type="number" id="count" placeholder="電影票張數" value="1" min="1" required>
+                <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
+            </div>`;
+    } else if (isVideo) { 
+        htmlContent = `
+            <div class="form-group">
+                <input type="number" id="cost" placeholder="月/年費支出 (元)" value="0" min="0" required>
+                <input type="hidden" id="count" value="1">
+                <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <input type="number" id="lastRead" placeholder="目前看到第幾集/次" min="0">
+                <input type="number" id="latestChapter" placeholder="平台更新至第幾集" min="0">
+            </div>`;
+    } else { 
+        htmlContent = `
+            <div class="form-group">
+                <input type="number" id="cost" placeholder="單價 (元)" min="0" required>
+                <input type="number" id="count" placeholder="已購話數/本數" min="0" required>
+                <input type="number" id="extra" placeholder="其他花費 (元)" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <input type="number" id="lastRead" placeholder="目前看到第幾話/次" min="0">
+                <input type="number" id="latestChapter" placeholder="平台更新至第幾話" min="0">
+            </div>`;
     }
+
+    dynamicFields.innerHTML = htmlContent;
 }
 
 platformSelect.addEventListener('change', updateFormFields);
@@ -109,13 +119,9 @@ function renderAll() {
         if (isBomtoon) totalC += itemTotal;
         else totalTWD += itemTotal;
 
-        // 電影院與一般作品的文字顯示差異
-        let progressText = '';
-        if (isMovie) {
-            progressText = `狀態：<b style="color: var(--text-main)">✅ 已觀影</b>`;
-        } else {
-            progressText = `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${item.lastRead || 0}</b> / ${item.latestChapter || 0} ${unit}`;
-        }
+        let progressText = isMovie 
+            ? `狀態：<b style="color: var(--text-main)">✅ 已觀影</b>` 
+            : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${item.lastRead || 0}</b> / ${item.latestChapter || 0} ${unit}`;
 
         const card = document.createElement('li');
         card.className = 'card';
@@ -133,17 +139,15 @@ function renderAll() {
             </div>
         `;
 
-        // 狀態分流
-        if (item.status === "completed" || isMovie) {
+        // 完結、已觀影都會收進戰績區
+        if (item.status === "completed" || item.status === "watched" || isMovie) {
             lists.completed.appendChild(card);
         } else {
             lists.ongoing.appendChild(card.cloneNode(true));
             
-            // 影視類不參與「今日更新提醒」，純看漫畫
             if (!isVideo) {
                 const dayMap = {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6};
                 const isToday = dayMap[item.updateDayLabel] === today;
-                
                 if ((isToday || item.updateDayLabel === "#十天一次連載") && Number(item.lastRead || 0) < Number(item.latestChapter || 0)) {
                     lists.update.appendChild(card.cloneNode(true));
                     hasUpdates = true;
@@ -164,16 +168,19 @@ document.getElementById('media-form').addEventListener('submit', (e) => {
     const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(platform);
     const isMovie = platform === '實體電影院';
     
+    const lastReadVal = document.getElementById('lastRead')?.value || 0;
+    const latestChapterVal = document.getElementById('latestChapter')?.value || 0;
+
     const newItem = {
         title: title,
         platform: platform,
-        status: isMovie ? 'completed' : document.getElementById('status').value,
+        status: isMovie ? 'watched' : document.getElementById('status').value,
         updateDayLabel: isVideo ? null : document.getElementById('updateDay').value,
         cost: document.getElementById('cost').value || 0,
         count: document.getElementById('count').value || 0,
         extra: document.getElementById('extra').value || 0,
-        lastRead: isMovie ? 1 : (document.getElementById('lastRead').value || 0),
-        latestChapter: isMovie ? 1 : (document.getElementById('latestChapter').value || 0)
+        lastRead: isMovie ? 1 : lastReadVal,
+        latestChapter: isMovie ? 1 : latestChapterVal
     };
 
     const existingIndex = mediaData.findIndex(item => item.title === title);
