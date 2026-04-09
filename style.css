@@ -180,3 +180,21 @@ input::placeholder { color: #888; }
     header { flex-direction: column; align-items: flex-start; gap: 10px; }
     .form-group { flex-direction: column; gap: 10px; }
 }
+.tag {
+    display: inline-block;
+    background: #444;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-bottom: 5px;
+    border: 1px solid var(--accent-color);
+}
+
+b {
+    font-size: 1.1rem;
+}
+
+small {
+    color: #888;
+}
