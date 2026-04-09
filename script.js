@@ -20,7 +20,7 @@ function getPlatformClass(platformName) {
         case 'BW電子書': return 'plat-bw';
         case 'gagaOOlala': return 'plat-gaga';
         case 'Netflix': return 'plat-netflix';
-        case '電影院（實體）': return 'plat-vieshow';
+        case '實體電影院': return 'plat-vieshow';
         default: return 'plat-mirror';
     }
 }
@@ -28,8 +28,8 @@ function getPlatformClass(platformName) {
 // 根據平台動態切換輸入欄位、按鈕顏色、單位與連載日
 function updateFormFields() {
     const platform = platformSelect.value;
-    const isVideo = ['Netflix', 'gagaOOlala', '電影院（實體）'].includes(platform);
-    const isMovie = platform === '電影院（實體）';
+    const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(platform);
+    const isMovie = platform === '實體電影院';
     
     // 按鈕跟著變色
     submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
@@ -102,8 +102,8 @@ function renderAll() {
     mediaData.forEach((item, index) => {
         const itemTotal = (Number(item.cost) * Number(item.count)) + Number(item.extra);
         const isBomtoon = item.platform === 'bomtoon.tw';
-        const isVideo = ['Netflix', 'gagaOOlala', '電影院（實體）'].includes(item.platform);
-        const isMovie = item.platform === '電影院（實體）';
+        const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(item.platform);
+        const isMovie = item.platform === '實體電影院';
         const unit = isVideo ? '集' : '話';
         
         if (isBomtoon) totalC += itemTotal;
@@ -161,8 +161,8 @@ document.getElementById('media-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const title = document.getElementById('title').value.trim();
     const platform = platformSelect.value;
-    const isVideo = ['Netflix', 'gagaOOlala', '電影院（實體）'].includes(platform);
-    const isMovie = platform === '電影院（實體）';
+    const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(platform);
+    const isMovie = platform === '實體電影院';
     
     const newItem = {
         title: title,
