@@ -1,3 +1,4 @@
+// 霓專屬網址已焊死，不用再改了！
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyt6BLxmXBS_ndxLfq4tV5uH8u8_hlwhBMHY9rIUUrVA9CcUWceZ4IeRHao-h_OQmKvNw/exec'; 
 
 let mediaData = [];
@@ -48,6 +49,7 @@ async function loadData() {
     finally { loadingMsg.style.display = 'none'; }
 }
 
+// 🔥 精準巡邏邏輯：略過季休，追平的不吵
 function checkTodayUpdates() {
     const now = new Date();
     const todayDayOfWeek = now.getDay(); 
@@ -58,7 +60,9 @@ function checkTodayUpdates() {
     let unfinishedTitles = [];
 
     mediaData.forEach((item) => {
-        if (item.status === 'completed' || item.status === 'watched') return;
+        // 完結、觀影、或是「季休」一律不巡邏
+        if (item.status === 'completed' || item.status === 'watched' || item.status === 'hiatus') return;
+
         let cleanDate = formatTaiwanDate(item.customDate);
         let nextDateStr = calculateNextDate(cleanDate, item.updateDayLabel);
         const isVideo = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+', '實體電影院'].includes(item.platform);
@@ -75,17 +79,20 @@ function checkTodayUpdates() {
             if (dayMap[item.updateDayLabel] === todayDayOfWeek) isUpdateDue = true;
         }
 
+        // 1. 只要是更新日，一定通知上菜
         if (isUpdateDue) {
             todayUpdateTitles.push(`- ${item.title} (${item.platform})`);
-        } else if (lastRead > 0 && lastRead < totalLimit) {
+        } 
+        // 2. 不是更新日，且進度真的落後(沒追平)，才列入吃到一半
+        else if (lastRead > 0 && lastRead < totalLimit) {
             unfinishedTitles.push(`- ${item.title} (進度：${lastRead}/${mainTotal})`);
         }
     });
 
     let message = "";
     if (todayUpdateTitles.length > 0) message += `🔥 今日新菜上桌：\n${todayUpdateTitles.join('\n')}\n\n`;
-    if (unfinishedTitles.length > 0) message += `📖 這些看到一半喔：\n${unfinishedTitles.join('\n')}\n\n`;
-    if (message !== "") alert(`🔔小墨管家巡邏報告：\n\n${message}睡前補充一下糧食！`);
+    if (unfinishedTitles.length > 0) message += `📖 這些真的還沒看完喔：\n${unfinishedTitles.join('\n')}\n\n`;
+    if (message !== "") alert(`🔔 小墨管家巡邏報告：\n\n${message}睡前補充糧食！`);
 }
 
 function getPlatformClass(platformName) {
@@ -113,15 +120,16 @@ function updateFormFields() {
     if (submitBtn) submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
     if (groupStatusDay) groupStatusDay.style.display = 'flex';
     if (updateDaySelect) updateDaySelect.style.display = isVideo ? 'none' : 'block';
+    
     if (statusSelect) {
         if (isMovie) statusSelect.innerHTML = '<option value="watched">已觀影</option>';
-        else statusSelect.innerHTML = '<option value="ongoing">正在追</option><option value="completed">已完結 / 封存</option>';
+        else statusSelect.innerHTML = '<option value="ongoing">正在追</option><option value="hiatus">季休中 / 待更新</option><option value="completed">已完結 / 封存</option>';
     }
     if (dateLabel) dateLabel.textContent = isVideo ? '📅 觀影日：' : '📅 最新更新日：';
     
     let htmlContent = '';
     if (platform === 'bomtoon.tw') {
-        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="每話幾C" min="0" required><input type="number" id="count" placeholder="正文已購數" min="0" required><input type="number" id="extra" placeholder="其他花費" value="0" min="0"></div><div class="form-group"><input type="number" id="lastRead" placeholder="目前進度" min="0"><input type="number" id="latestChapter" placeholder="正文總話數" min="0"><input type="number" id="specialCount" placeholder="外傳話數" value="0" min="0"></div>`;
+        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="每話幾C" min="0" required><input type="number" id="count" placeholder="正文已購數" min="0" required><input type="number" id="extra" placeholder="其他花費(周邊)" value="0" min="0"></div><div class="form-group"><input type="number" id="lastRead" placeholder="目前進度" min="0"><input type="number" id="latestChapter" placeholder="正文總話數" min="0"><input type="number" id="specialCount" placeholder="外傳話數" value="0" min="0"></div>`;
     } else if (isMovie) {
         htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="單價" min="0" required><input type="number" id="count" placeholder="張數" value="1" min="1" required><input type="number" id="extra" placeholder="其他花費" value="0" min="0"></div>`;
     } else if (isSubPlatform) { 
@@ -155,7 +163,6 @@ function renderAll() {
         let extraCost = Number(item.extra || 0);
         let specialTotal = Number(item.specialCount || 0);
         
-        // 自動計算：(正文+外傳) * 單價 + 其他
         let itemTotal = (!isVideo && !isMovie) ? (cost * (count + specialTotal)) + extraCost : (cost * count) + extraCost;
         if (isBomtoon) totalC += itemTotal; else totalTWD += itemTotal;
 
@@ -164,12 +171,7 @@ function renderAll() {
         let mainRead = Math.min(lastRead, mainTotal);
         
         let progressText = isMovie ? `狀態：<b>✅ 已觀影</b>` : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${mainRead}</b> / ${mainTotal} ${isVideo?'集':'話'}`;
-        
-        // 🐛 蟲蟲修復：括號內改為顯示「計算後的外傳花費」
-        if (specialTotal > 0) {
-            let specialCostCalculated = cost * specialTotal;
-            progressText += ` <small>(+ <b style="color: var(--accent-c)">${specialCostCalculated} ${currencyUnit}</b> / ${specialTotal} 外傳)</small>`;
-        }
+        if (specialTotal > 0) progressText += ` <small>(+ <b style="color: var(--accent-c)">${cost * specialTotal} ${currencyUnit}</b> / ${specialTotal} 外傳)</small>`;
 
         let cleanDate = formatTaiwanDate(item.customDate);
         let nextDateStr = calculateNextDate(cleanDate, item.updateDayLabel);
@@ -179,11 +181,14 @@ function renderAll() {
         card.className = 'card';
         card.innerHTML = `<button class="delete-btn" onclick="deleteItem('${item.title}')">×</button><span class="plat-tag ${getPlatformClass(item.platform)}">${item.platform}</span><br><span class="card-title">${item.title}</span>${(!isVideo && item.updateDayLabel) ? `<div class="update-tag">${item.updateDayLabel}</div>` : ''}<div class="card-details">${progressText}${dateTagHTML}</div><div class="card-cost ${isBomtoon ? 'cost-c' : 'cost-twd'}">總投資：${itemTotal} ${currencyUnit}</div>`;
 
-        if (item.status === "completed" || item.status === "watched" || isMovie) lists.completed.appendChild(card);
-        else {
+        // 如果完結或觀影，丟封存區；否則丟追坑區 (季休也留在追坑區)
+        if (item.status === "completed" || item.status === "watched" || isMovie) {
+            lists.completed.appendChild(card);
+        } else {
             lists.ongoing.appendChild(card.cloneNode(true));
+            // 提醒清單：排除季休
             let isUpdateDue = (nextDateStr && todayDateStr >= nextDateStr) || (!item.customDate && item.updateDayLabel && !isVideo && {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6}[item.updateDayLabel] === todayDayOfWeek);
-            if (isUpdateDue && lastRead < (mainTotal + specialTotal)) {
+            if (isUpdateDue && lastRead < (mainTotal + specialTotal) && item.status !== 'hiatus') {
                 if (lists.update) lists.update.appendChild(card.cloneNode(true));
                 hasUpdates = true;
             }
