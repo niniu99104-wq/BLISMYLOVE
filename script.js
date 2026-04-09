@@ -1,5 +1,17 @@
 let mediaData = JSON.parse(localStorage.getItem('bl_tracker_data')) || [];
 
+// 【資料自動校正】把舊的「電影院（實體）」默默改成「實體電影院」，保持資料庫乾淨
+let needsSave = false;
+mediaData.forEach(item => {
+    if (item.platform === '電影院（實體）') {
+        item.platform = '實體電影院';
+        needsSave = true;
+    }
+});
+if (needsSave) {
+    localStorage.setItem('bl_tracker_data', JSON.stringify(mediaData));
+}
+
 const platformSelect = document.getElementById('platform');
 const dynamicFields = document.getElementById('dynamic-fields');
 const submitBtn = document.getElementById('submit-btn');
@@ -7,7 +19,6 @@ const groupStatusDay = document.getElementById('group-status-day');
 const updateDaySelect = document.getElementById('updateDay');
 const statusSelect = document.getElementById('status');
 
-// 取得平台對應的 CSS class
 function getPlatformClass(platformName) {
     switch(platformName) {
         case 'bomtoon.tw': return 'plat-bomtoon';
@@ -21,30 +32,30 @@ function getPlatformClass(platformName) {
     }
 }
 
-// 根據平台動態生成對應的 HTML 輸入框與選單狀態
 function updateFormFields() {
+    if (!platformSelect || !dynamicFields) return; // 防禦：HTML沒準備好就不執行，絕不當機
+    
     const platform = platformSelect.value;
     const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(platform);
     const isMovie = platform === '實體電影院';
     
-    // 按鈕變色
-    submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
+    if (submitBtn) submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
     
-    // 狀態與連載日的顯示邏輯
-    if (isMovie) {
-        groupStatusDay.style.display = 'flex';
-        updateDaySelect.style.display = 'none'; // 隱藏連載日
-        statusSelect.innerHTML = '<option value="watched">已觀影</option>'; // 鎖定狀態為已觀影
-    } else {
-        groupStatusDay.style.display = 'flex';
-        updateDaySelect.style.display = isVideo ? 'none' : 'block'; // 影視類隱藏連載日
-        statusSelect.innerHTML = `
-            <option value="ongoing">正在追</option>
-            <option value="completed">已完結 / 封存</option>
-        `; // 恢復一般狀態選項
+    // 防禦：確認標籤存在才操作
+    if (groupStatusDay) groupStatusDay.style.display = 'flex';
+    if (updateDaySelect) updateDaySelect.style.display = isVideo ? 'none' : 'block';
+    
+    if (statusSelect) {
+        if (isMovie) {
+            statusSelect.innerHTML = '<option value="watched">已觀影</option>';
+        } else {
+            statusSelect.innerHTML = `
+                <option value="ongoing">正在追</option>
+                <option value="completed">已完結 / 封存</option>
+            `;
+        }
     }
     
-    // 動態生成輸入欄位
     let htmlContent = '';
 
     if (platform === 'bomtoon.tw') {
@@ -92,7 +103,9 @@ function updateFormFields() {
     dynamicFields.innerHTML = htmlContent;
 }
 
-platformSelect.addEventListener('change', updateFormFields);
+if (platformSelect) {
+    platformSelect.addEventListener('change', updateFormFields);
+}
 updateFormFields();
 
 function saveData() {
@@ -105,8 +118,16 @@ function renderAll() {
     let totalTWD = 0;
     const today = new Date().getDay();
     
-    const lists = { update: document.getElementById("update-list"), ongoing: document.getElementById("ongoing-list"), completed: document.getElementById("completed-list") };
-    Object.values(lists).forEach(l => l.innerHTML = "");
+    const lists = { 
+        update: document.getElementById("update-list"), 
+        ongoing: document.getElementById("ongoing-list"), 
+        completed: document.getElementById("completed-list") 
+    };
+    
+    // 防禦：如果畫面還沒載入列表就不執行
+    if (!lists.ongoing) return;
+
+    Object.values(lists).forEach(l => { if (l) l.innerHTML = ""; });
     let hasUpdates = false;
 
     mediaData.forEach((item, index) => {
@@ -139,65 +160,74 @@ function renderAll() {
             </div>
         `;
 
-        // 完結、已觀影都會收進戰績區
         if (item.status === "completed" || item.status === "watched" || isMovie) {
-            lists.completed.appendChild(card);
+            if (lists.completed) lists.completed.appendChild(card);
         } else {
-            lists.ongoing.appendChild(card.cloneNode(true));
+            if (lists.ongoing) lists.ongoing.appendChild(card.cloneNode(true));
             
             if (!isVideo) {
                 const dayMap = {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6};
-                const isToday = dayMap[item.updateDayLabel] === today;
+                const isToday = item.updateDayLabel ? dayMap[item.updateDayLabel] === today : false;
                 if ((isToday || item.updateDayLabel === "#十天一次連載") && Number(item.lastRead || 0) < Number(item.latestChapter || 0)) {
-                    lists.update.appendChild(card.cloneNode(true));
+                    if (lists.update) lists.update.appendChild(card.cloneNode(true));
                     hasUpdates = true;
                 }
             }
         }
     });
 
-    document.getElementById("total-c-coins").textContent = totalC;
-    document.getElementById("total-twd").textContent = totalTWD;
-    document.getElementById("update-alert").classList.toggle("hidden", !hasUpdates);
+    const totalCElement = document.getElementById("total-c-coins");
+    const totalTWDElement = document.getElementById("total-twd");
+    const updateAlert = document.getElementById("update-alert");
+
+    if (totalCElement) totalCElement.textContent = totalC;
+    if (totalTWDElement) totalTWDElement.textContent = totalTWD;
+    if (updateAlert) updateAlert.classList.toggle("hidden", !hasUpdates);
 }
 
-document.getElementById('media-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const title = document.getElementById('title').value.trim();
-    const platform = platformSelect.value;
-    const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(platform);
-    const isMovie = platform === '實體電影院';
-    
-    const lastReadVal = document.getElementById('lastRead')?.value || 0;
-    const latestChapterVal = document.getElementById('latestChapter')?.value || 0;
+const mediaForm = document.getElementById('media-form');
+if (mediaForm) {
+    mediaForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = document.getElementById('title').value.trim();
+        const platform = platformSelect.value;
+        const isVideo = ['Netflix', 'gagaOOlala', '實體電影院'].includes(platform);
+        const isMovie = platform === '實體電影院';
+        
+        const lastReadVal = document.getElementById('lastRead')?.value || 0;
+        const latestChapterVal = document.getElementById('latestChapter')?.value || 0;
 
-    const newItem = {
-        title: title,
-        platform: platform,
-        status: isMovie ? 'watched' : document.getElementById('status').value,
-        updateDayLabel: isVideo ? null : document.getElementById('updateDay').value,
-        cost: document.getElementById('cost').value || 0,
-        count: document.getElementById('count').value || 0,
-        extra: document.getElementById('extra').value || 0,
-        lastRead: isMovie ? 1 : lastReadVal,
-        latestChapter: isMovie ? 1 : latestChapterVal
-    };
+        const newItem = {
+            title: title,
+            platform: platform,
+            status: isMovie ? 'watched' : (statusSelect ? statusSelect.value : 'ongoing'),
+            updateDayLabel: isVideo ? null : (updateDaySelect ? updateDaySelect.value : null),
+            cost: document.getElementById('cost')?.value || 0,
+            count: document.getElementById('count')?.value || 0,
+            extra: document.getElementById('extra')?.value || 0,
+            lastRead: isMovie ? 1 : lastReadVal,
+            latestChapter: isMovie ? 1 : latestChapterVal
+        };
 
-    const existingIndex = mediaData.findIndex(item => item.title === title);
-    if (existingIndex !== -1) mediaData[existingIndex] = newItem;
-    else mediaData.unshift(newItem); 
-    
-    saveData();
-    e.target.reset();
-    updateFormFields(); 
-});
+        const existingIndex = mediaData.findIndex(item => item.title === title);
+        if (existingIndex !== -1) mediaData[existingIndex] = newItem;
+        else mediaData.unshift(newItem); 
+        
+        saveData();
+        e.target.reset();
+        updateFormFields(); 
+    });
+}
 
 function deleteItem(index) {
     if(confirm('要刪除這筆紀錄嗎？')) { mediaData.splice(index, 1); saveData(); }
 }
 
-document.getElementById('clear-data').addEventListener('click', () => {
-    if(confirm('注意：清空後資料無法恢復，確定嗎？')) { localStorage.removeItem('bl_tracker_data'); location.reload(); }
-});
+const clearBtn = document.getElementById('clear-data');
+if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+        if(confirm('注意：清空後資料無法恢復，確定嗎？')) { localStorage.removeItem('bl_tracker_data'); location.reload(); }
+    });
+}
 
 renderAll();
