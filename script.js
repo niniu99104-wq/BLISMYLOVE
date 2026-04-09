@@ -101,8 +101,8 @@ function updateFormFields() {
     if (!platformSelect || !dynamicFields) return;
     const platform = platformSelect.value;
     const isSubPlatform = ['Netflix', 'gagaOOlala', '愛奇藝', 'Disney+'].includes(platform);
-    const isVideo = isSubPlatform || platform === '實體電影院';
     const isMovie = platform === '實體電影院';
+    const isVideo = isSubPlatform || isMovie;
     
     if (submitBtn) submitBtn.className = `btn-submit ${getPlatformClass(platform)}`;
     if (groupStatusDay) groupStatusDay.style.display = 'flex';
@@ -114,15 +114,15 @@ function updateFormFields() {
     if (dateLabel) dateLabel.textContent = isVideo ? '📅 觀影日：' : '📅 最新更新日：';
     
     let htmlContent = '';
-    // 這裡加入外傳已購數 (specialPurchased) 跟 外傳總話數 (specialCount) 拆開
+    // 拿掉 value="0" 讓 placeholder 可以正常顯示
     if (platform === 'bomtoon.tw') {
-        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="每話幾C" min="0" required><input type="number" id="count" placeholder="正文已購數" min="0" required><input type="number" id="specialPurchased" placeholder="外傳已購數" value="0" min="0"></div><div class="form-group"><input type="number" id="extra" placeholder="其他花費(周邊)" value="0" min="0"><input type="number" id="lastRead" placeholder="目前進度" min="0"></div><div class="form-group"><input type="number" id="latestChapter" placeholder="正文總話數" min="0"><input type="number" id="specialCount" placeholder="外傳總話數" value="0" min="0"></div>`;
+        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="每話幾C" min="0" required><input type="number" id="count" placeholder="正文已購數" min="0" required><input type="number" id="specialPurchased" placeholder="外傳已購數" min="0"></div><div class="form-group"><input type="number" id="extra" placeholder="其他花費(周邊)" min="0"><input type="number" id="lastRead" placeholder="目前進度" min="0"></div><div class="form-group"><input type="number" id="latestChapter" placeholder="正文總話數" min="0"><input type="number" id="specialCount" placeholder="外傳總話數" min="0"></div>`;
     } else if (isMovie) {
-        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="單價" min="0" required><input type="number" id="count" placeholder="張數" value="1" min="1" required><input type="number" id="extra" placeholder="其他花費" value="0" min="0"></div>`;
+        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="單價" min="0" required><input type="number" id="count" placeholder="張數" min="1" required><input type="number" id="extra" placeholder="其他花費" min="0"></div>`;
     } else if (isSubPlatform) { 
-        htmlContent = `<div class="form-group" style="margin-bottom: 5px;"><input type="number" id="cost" placeholder="額外花費" value="0" min="0" required><input type="hidden" id="count" value="1"><input type="number" id="extra" placeholder="其他花費" value="0" min="0"></div><div class="form-group"><input type="number" id="lastRead" placeholder="目前進度(集)" min="0"><input type="number" id="latestChapter" placeholder="最新進度(集)" min="0"></div>`;
+        htmlContent = `<div class="form-group" style="margin-bottom: 5px;"><input type="number" id="cost" placeholder="額外花費" min="0" required><input type="hidden" id="count" value="1"><input type="number" id="extra" placeholder="其他花費" min="0"></div><div class="form-group"><input type="number" id="lastRead" placeholder="目前進度(集)" min="0"><input type="number" id="latestChapter" placeholder="最新進度(集)" min="0"></div>`;
     } else { 
-        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="單價(元)" min="0" required><input type="number" id="count" placeholder="正文已購數" min="0" required><input type="number" id="specialPurchased" placeholder="外傳已購數" value="0" min="0"></div><div class="form-group"><input type="number" id="extra" placeholder="其他花費" value="0" min="0"><input type="number" id="lastRead" placeholder="目前進度" min="0"></div><div class="form-group"><input type="number" id="latestChapter" placeholder="正文本數" min="0"><input type="number" id="specialCount" placeholder="外傳數" value="0" min="0"></div>`;
+        htmlContent = `<div class="form-group"><input type="number" id="cost" placeholder="單價(元)" min="0" required><input type="number" id="count" placeholder="正文已購數" min="0" required><input type="number" id="specialPurchased" placeholder="外傳已購數" min="0"></div><div class="form-group"><input type="number" id="extra" placeholder="其他花費" min="0"><input type="number" id="lastRead" placeholder="目前進度" min="0"></div><div class="form-group"><input type="number" id="latestChapter" placeholder="正文本數" min="0"><input type="number" id="specialCount" placeholder="外傳數" min="0"></div>`;
     }
     dynamicFields.innerHTML = htmlContent;
 }
@@ -157,7 +157,6 @@ function renderAll() {
         let lastRead = Number(item.lastRead || 0);
         let mainTotal = Number(item.latestChapter || 0);
         let mainRead = Math.min(lastRead, mainTotal);
-        let specRead = Math.max(0, lastRead - mainTotal);
         let progressText = isMovie ? `狀態：<b>✅ 已觀影</b>` : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${mainRead}</b> / ${mainTotal} ${isVideo?'集':'話'}`;
         
         if (specialTotal > 0 || specBought > 0) {
