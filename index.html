@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>霓的追劇/追漫小管家</title>
-    <link rel="stylesheet" href="style.css?v=final">
+    <title>霓的追劇/追漫小管家 | 手機優化版</title>
+    <link rel="stylesheet" href="style.css?v=final_fix">
 </head>
 <body>
     <header>
@@ -17,10 +17,10 @@
 
     <main>
         <section class="form-section">
-            <h2>➕ 紀錄更新 (自動同步至 Google 試算表)</h2>
+            <h2>➕ 紀錄更新</h2>
             <form id="media-form">
                 <div class="form-group">
-                    <input type="text" id="title" placeholder="作品名稱或月費項目 (必填)" required>
+                    <input type="text" id="title" placeholder="作品名稱 (必填)" required>
                     <select id="platform">
                         <option value="bomtoon.tw">bomtoon.tw</option>
                         <option value="Webtoon">Webtoon</option>
@@ -55,16 +55,16 @@
 
                 <div id="dynamic-fields"></div>
 
-                <div class="form-group" style="align-items: center; border-top: 1px dashed #333; padding-top: 15px; margin-top: 5px;">
-                    <span id="date-label" style="flex: 1; color: #aaa; font-size: 0.95rem; font-weight: bold;">📅 最新更新日：</span>
-                    <input type="date" id="customDate" style="flex: 2; color-scheme: dark; cursor: pointer; padding: 10px; font-size: 1rem;">
+                <div class="date-input-group">
+                    <label id="date-label">📅 最新更新日：</label>
+                    <input type="date" id="customDate">
                 </div>
 
-                <button type="submit" id="submit-btn" class="btn-submit plat-bomtoon" style="margin-top: 15px;">確認儲存</button>
+                <button type="submit" id="submit-btn" class="btn-submit plat-bomtoon">確認儲存</button>
             </form>
         </section>
 
-        <div id="loading-msg" class="loading-box">⏳ 正在與 Google 資料庫同步中，請稍候...</div>
+        <div id="loading-msg" class="loading-box">⏳ 正在與 Google 資料庫同步中...</div>
 
         <section id="update-alert" class="alert-section hidden">
             <h2>🔥 今日更新提醒 (您的菜上桌了)</h2>
@@ -80,12 +80,7 @@
             <h2>✅ 戰績與月費封存</h2>
             <ul id="completed-list" class="card-list"></ul>
         </section>
-        
-        <div style="text-align: center; padding: 40px 0; font-size: 0.8rem; color: #555;">
-            資料已全面串接 Google 試算表，如需批次修改請至試算表操作。
-        </div>
     </main>
-
-    <script src="script.js"></script>
+    <script src="script.js?v=final_fix"></script>
 </body>
 </html>
