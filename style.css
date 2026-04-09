@@ -1,7 +1,7 @@
 :root {
     --bg-color: #0a0a0a;
     --card-bg: #161616;
-    --accent-c: #ff9dbb; /* Bomtoon 桃波米色 */
+    --accent-c: #ff9dbb; 
     --accent-twd: #4caf50;
     --text-main: #f0f0f0;
     --text-sub: #888;
@@ -9,35 +9,33 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-    font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
-    background-color: var(--bg-color); color: var(--text-main);
-    padding: 20px; max-width: 900px; margin: 0 auto; line-height: 1.6;
-}
-
+body { font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: var(--bg-color); color: var(--text-main); padding: 20px; max-width: 900px; margin: 0 auto; line-height: 1.6; }
 header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 30px; }
 .stats p { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; }
 .highlight-c { color: var(--accent-c); font-size: 1.8rem; }
 .highlight-twd { color: var(--accent-twd); font-size: 1.8rem; }
 h2 { font-size: 1.2rem; margin-bottom: 15px; color: var(--text-sub); border-left: 4px solid var(--accent-c); padding-left: 10px; }
 
-.form-section { background: #111; padding: 25px; border-radius: 12px; margin-bottom: 40px; border: 1px solid var(--border-color); }
+.form-section { background: #111; padding: 25px; border-radius: 12px; margin-bottom: 30px; border: 1px solid var(--border-color); }
 .form-group { display: flex; gap: 12px; margin-bottom: 15px; }
 input, select { background: #222; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 6px; flex: 1; font-size: 1rem; }
 input::placeholder { color: #666; }
 
-/* 平台專屬顏色標籤與按鈕 */
 .btn-submit { width: 100%; padding: 15px; border: none; border-radius: 6px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; color: white; }
 .btn-submit:hover { opacity: 0.8; filter: brightness(1.2); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.plat-bomtoon { background-color: #ff9dbb; color: #000 !important; } /* 桃波米色 */
-.plat-webtoon { background-color: #00dc64; color: #000 !important; } /* Webtoon綠 */
-.plat-mirror { background-color: #1a1a1a; border: 1px solid #555; color: #fff !important; } /* 鏡文學黑 */
-.plat-bw { background-color: #ffffff; color: #000 !important; } /* BW白 */
-.plat-gaga { background-color: #9c27b0; color: #fff !important; } /* Gaga紫 */
-.plat-netflix { background-color: #e50914; color: #fff !important; } /* 網飛紅 */
-.plat-vieshow { background-color: #003366; border: 1px solid #e50914; color: #fff !important; } /* 威秀深藍底+紅邊 */
+.plat-bomtoon { background-color: #ff9dbb; color: #000 !important; } 
+.plat-webtoon { background-color: #00dc64; color: #000 !important; } 
+.plat-mirror { background-color: #1a1a1a; border: 1px solid #555; color: #fff !important; } 
+.plat-bw { background-color: #ffffff; color: #000 !important; } 
+.plat-gaga { background-color: #9c27b0; color: #fff !important; } 
+.plat-netflix { background-color: #e50914; color: #fff !important; } 
+.plat-iqiyi { background-color: #00cc00; color: #fff !important; } 
+.plat-disney { background-color: #113CCF; color: #fff !important; } 
+.plat-vieshow { background-color: #003366; border: 1px solid #e50914; color: #fff !important; } 
+
+.loading-box { text-align: center; background: #222; padding: 15px; border-radius: 8px; margin-bottom: 30px; color: #ff9dbb; font-weight: bold; display: none; }
 
 .card-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
 .card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; position: relative; }
@@ -48,15 +46,12 @@ input::placeholder { color: #666; }
 .card-title { font-size: 1.25rem; font-weight: bold; display: block; margin-bottom: 5px; }
 .card-details { margin: 15px 0; font-size: 0.95rem; }
 .card-cost { text-align: right; border-top: 1px solid #222; padding-top: 10px; font-weight: bold; font-size: 1.1rem; }
-
 .cost-c { color: var(--accent-c); }
 .cost-twd { color: var(--accent-twd); }
 
 .delete-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #444; cursor: pointer; font-size: 1.5rem; }
-.delete-btn:hover { color: #fff; }
+.delete-btn:hover { color: #ff5252; }
 .hidden { display: none; }
 .alert-section { background: rgba(255, 157, 187, 0.05); padding: 20px; border-radius: 10px; border: 1px dashed var(--accent-c); margin-bottom: 40px; }
-.btn-clear { background: none; border: 1px solid #444; color: #888; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
-.btn-clear:hover { color: #fff; border-color: #fff; }
 
 @media (max-width: 600px) { header { flex-direction: column; align-items: flex-start; } .form-group { flex-direction: column; } }
