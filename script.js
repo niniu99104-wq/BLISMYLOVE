@@ -10,7 +10,7 @@ const groupStatusDay = document.getElementById('group-status-day');
 const updateDaySelect = document.getElementById('updateDay');
 const statusSelect = document.getElementById('status');
 const loadingMsg = document.getElementById('loading-msg');
-const dateLabel = document.getElementById('date-label'); // 新增：控制日期標籤
+const dateLabel = document.getElementById('date-label'); 
 
 async function loadData() {
     if (SCRIPT_URL.includes('請在這裡貼上')) {
@@ -69,9 +69,9 @@ function updateFormFields() {
         }
     }
     
-    // 動態切換日期的文字標籤
+    // 切換輸入框旁邊的文字
     if (dateLabel) {
-        dateLabel.textContent = isMovie ? '👈 觀影日期' : '👈 下次更新日';
+        dateLabel.textContent = isMovie ? '👈 觀影日' : '👈 更新日';
     }
     
     let htmlContent = '';
@@ -131,13 +131,11 @@ function renderAll() {
     let totalC = 0;
     let totalTWD = 0;
     
+    // 取得台灣時間的今天日期字串 (YYYY-MM-DD)
     const todayObj = new Date();
-    const today = todayObj.getDay(); 
-    
-    // 修正時區問題，確保日期字串比對正確 (台灣時間)
+    const todayDayOfWeek = todayObj.getDay(); 
     const offset = todayObj.getTimezoneOffset() * 60000;
-    const localISOTime = (new Date(todayObj - offset)).toISOString().split('T')[0];
-    const todayDateStr = localISOTime;
+    const todayDateStr = (new Date(todayObj - offset)).toISOString().split('T')[0];
     
     const lists = { update: document.getElementById("update-list"), ongoing: document.getElementById("ongoing-list"), completed: document.getElementById("completed-list") };
     if (!lists.ongoing) return;
@@ -159,10 +157,29 @@ function renderAll() {
             ? `狀態：<b style="color: var(--text-main)">✅ 已觀影</b>` 
             : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${item.lastRead || 0}</b> / ${item.latestChapter || 0} ${unit}`;
 
+        // 核心邏輯：自動推算下次更新日
+        let nextDateStr = '';
+        if (item.customDate && !isMovie && item.updateDayLabel) {
+            let d = new Date(item.customDate);
+            if (item.updateDayLabel === '#十天一次連載') {
+                d.setDate(d.getDate() + 10);
+                nextDateStr = d.toISOString().split('T')[0];
+            } else if (item.updateDayLabel.includes('週')) {
+                d.setDate(d.getDate() + 7);
+                nextDateStr = d.toISOString().split('T')[0];
+            }
+        }
+
+        // 渲染日期標籤
         let dateTagHTML = '';
-        if (item.customDate) {
-            const label = isMovie ? '觀影日' : '下次更新';
-            dateTagHTML = `<br><small style="color:#aaa;">🗓️ ${label}：${item.customDate}</small>`;
+        if (isMovie && item.customDate) {
+            dateTagHTML = `<br><small style="color:#aaa;">🗓️ 觀影日：${item.customDate}</small>`;
+        } else if (!isMovie && item.customDate) {
+            dateTagHTML = `<br><small style="color:#aaa;">🗓️ 更新日：${item.customDate}</small>`;
+            if (nextDateStr) {
+                // 將推算出來的下次更新日，用主題色醒目顯示在下方
+                dateTagHTML += `<br><small style="color:var(--accent-c); font-weight:bold;">⏰ 下次更新：${nextDateStr}</small>`;
+            }
         }
 
         const card = document.createElement('li');
@@ -175,7 +192,7 @@ function renderAll() {
             <div class="card-details">
                 ${progressText}
                 ${dateTagHTML}<br>
-                <small style="color:#666">${isMovie ? '電影票張數' : '已購基礎數'}：${item.count}</small>
+                <small style="color:#666; display:inline-block; margin-top:5px;">${isMovie ? '電影票張數' : '已購基礎數'}：${item.count}</small>
             </div>
             <div class="card-cost ${isBomtoon ? 'cost-c' : 'cost-twd'}">
                 ${isBomtoon ? `總花費：${itemTotal} C` : `總支出：${itemTotal} 元`}
@@ -188,16 +205,18 @@ function renderAll() {
             if (lists.ongoing) lists.ongoing.appendChild(card.cloneNode(true));
             
             const hasUnread = Number(item.lastRead || 0) < Number(item.latestChapter || 0);
-            
             let isUpdateDay = false;
-            if (!isVideo && item.updateDayLabel) {
+            
+            // 提醒判斷 1：如果今天已經大於等於推算出來的「下次更新日」
+            if (nextDateStr && todayDateStr >= nextDateStr) {
+                isUpdateDay = true;
+            }
+            // 提醒判斷 2：如果你沒輸入日期，只選了「週五連載」，那今天禮拜五也會提醒
+            if (!item.customDate && item.updateDayLabel && !isVideo) {
                 const dayMap = {"#週日連載":0, "#週一連載":1, "#週二連載":2, "#週三連載":3, "#週四連載":4, "#週五連載":5, "#週六連載":6};
-                if (dayMap[item.updateDayLabel] === today || item.updateDayLabel === "#十天一次連載") {
+                if (dayMap[item.updateDayLabel] === todayDayOfWeek) {
                     isUpdateDay = true;
                 }
-            }
-            if (item.customDate && item.customDate <= todayDateStr) {
-                isUpdateDay = true;
             }
 
             if (isUpdateDay && hasUnread) {
