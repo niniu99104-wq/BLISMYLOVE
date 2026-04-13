@@ -2,6 +2,7 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyt6BLxmXBS_ndxLfq4tV5uH8u8_hlwhBMHY9rIUUrVA9CcUWceZ4IeRHao-h_OQmKvNw/exec'; 
 
 let mediaData = [];
+const titleInput = document.getElementById('title'); // 新增抓取標題欄位
 const platformSelect = document.getElementById('platform');
 const dynamicFields = document.getElementById('dynamic-fields');
 const submitBtn = document.getElementById('submit-btn');
@@ -97,6 +98,39 @@ function checkTodayUpdates() {
     if (todayUpdateTitles.length > 0) message += `🔥 今日新菜上桌：\n${todayUpdateTitles.join('\n')}\n\n`;
     if (unfinishedTitles.length > 0) message += `📖 這些真的還沒看完喔：\n${unfinishedTitles.join('\n')}\n\n`;
     if (message !== "") alert(`🔔 小墨管家巡邏報告：\n\n${message}睡前補充糧食！`);
+}
+
+// 🔥 自動帶入邏輯：輸入標題時自動比對資料庫
+if (titleInput) {
+    titleInput.addEventListener('blur', () => {
+        const title = titleInput.value.trim();
+        const existing = mediaData.find(item => item.title === title);
+        
+        if (existing) {
+            // 1. 帶入平台與狀態
+            platformSelect.value = existing.platform;
+            statusSelect.value = existing.status;
+            if (updateDaySelect) updateDaySelect.value = existing.updateDayLabel || "#週一連載";
+            
+            // 2. 先觸發欄位更新，確保格子都長出來
+            updateFormFields();
+            
+            // 3. 填入數值 (用 setTimeout 確保動態欄位已經渲染完畢)
+            setTimeout(() => {
+                if (document.getElementById('cost')) document.getElementById('cost').value = existing.cost || "";
+                if (document.getElementById('count')) document.getElementById('count').value = existing.count || "";
+                if (document.getElementById('specialPurchased')) document.getElementById('specialPurchased').value = existing.specialPurchased || "";
+                if (document.getElementById('extra')) document.getElementById('extra').value = existing.extra || "";
+                if (document.getElementById('lastRead')) document.getElementById('lastRead').value = existing.lastRead || "";
+                if (document.getElementById('latestChapter')) document.getElementById('latestChapter').value = existing.latestChapter || "";
+                if (document.getElementById('specialCount')) document.getElementById('specialCount').value = existing.specialCount || "";
+                // 日期也順便帶入
+                if (document.getElementById('customDate') && existing.customDate) {
+                    document.getElementById('customDate').value = formatTaiwanDate(existing.customDate);
+                }
+            }, 50); 
+        }
+    });
 }
 
 function getPlatformClass(platformName) {
