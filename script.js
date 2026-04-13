@@ -1,5 +1,5 @@
 // 霓專屬網址已焊死，不用再改了！
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyt6BLxmXBS_ndxLfq4tV5uH8u8_hlwhBMHY9rIUUrVA9CcUWceZ4IeRHao-h_OQmKvNw/exec'; 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw154_slWBUssHmoVsJQppcHRH6RDS1cETCdF8ex_SrO1o_UrL5dwIAwRPYVjK2O3eJrw/exec'; 
 
 let mediaData = [];
 const titleInput = document.getElementById('title'); 
