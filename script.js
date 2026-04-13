@@ -2,7 +2,7 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyt6BLxmXBS_ndxLfq4tV5uH8u8_hlwhBMHY9rIUUrVA9CcUWceZ4IeRHao-h_OQmKvNw/exec'; 
 
 let mediaData = [];
-const titleInput = document.getElementById('title'); // 新增抓取標題欄位
+const titleInput = document.getElementById('title'); 
 const platformSelect = document.getElementById('platform');
 const dynamicFields = document.getElementById('dynamic-fields');
 const submitBtn = document.getElementById('submit-btn');
@@ -49,7 +49,6 @@ async function loadData() {
     finally { loadingMsg.style.display = 'none'; }
 }
 
-// 🔥 精準巡邏邏輯更新：無論狀態，只要沒看完就提醒
 function checkTodayUpdates() {
     const now = new Date();
     const todayDayOfWeek = now.getDay(); 
@@ -59,7 +58,6 @@ function checkTodayUpdates() {
     let unfinishedTitles = [];
 
     mediaData.forEach((item) => {
-        // 排除周邊商品不巡邏
         if (item.platform === '周邊商品') return;
 
         let cleanDate = formatTaiwanDate(item.customDate);
@@ -71,7 +69,6 @@ function checkTodayUpdates() {
         let totalLimit = mainTotal + specialTotal;
         const hasUnread = lastRead < totalLimit;
         
-        // 判定 1：今日新菜 (僅限「正在追」且更新日到了的作品)
         if (item.status === 'ongoing') {
             let isUpdateDue = false;
             if (nextDateStr && todayDateStr >= nextDateStr) isUpdateDue = true;
@@ -81,11 +78,10 @@ function checkTodayUpdates() {
             }
             if (isUpdateDue) {
                 todayUpdateTitles.push(`- ${item.title} (${item.platform})`);
-                return; // 如果已經是新菜，就不用重複列在未看完清單
+                return; 
             }
         }
 
-        // 判定 2：吃到一半 (不管是正在追、季休、還是已完結，只要沒看完就提醒)
         if (hasUnread && lastRead > 0) {
             let statusLabel = "";
             if (item.status === 'hiatus') statusLabel = " [季休中]";
@@ -100,22 +96,18 @@ function checkTodayUpdates() {
     if (message !== "") alert(`🔔 小墨管家巡邏報告：\n\n${message}睡前補充糧食！`);
 }
 
-// 🔥 自動帶入邏輯：輸入標題時自動比對資料庫
 if (titleInput) {
     titleInput.addEventListener('blur', () => {
         const title = titleInput.value.trim();
         const existing = mediaData.find(item => item.title === title);
         
         if (existing) {
-            // 1. 帶入平台與狀態
             platformSelect.value = existing.platform;
             statusSelect.value = existing.status;
             if (updateDaySelect) updateDaySelect.value = existing.updateDayLabel || "#週一連載";
             
-            // 2. 先觸發欄位更新，確保格子都長出來
             updateFormFields();
             
-            // 3. 填入數值 (用 setTimeout 確保動態欄位已經渲染完畢)
             setTimeout(() => {
                 if (document.getElementById('cost')) document.getElementById('cost').value = existing.cost || "";
                 if (document.getElementById('count')) document.getElementById('count').value = existing.count || "";
@@ -124,7 +116,6 @@ if (titleInput) {
                 if (document.getElementById('lastRead')) document.getElementById('lastRead').value = existing.lastRead || "";
                 if (document.getElementById('latestChapter')) document.getElementById('latestChapter').value = existing.latestChapter || "";
                 if (document.getElementById('specialCount')) document.getElementById('specialCount').value = existing.specialCount || "";
-                // 日期也順便帶入
                 if (document.getElementById('customDate') && existing.customDate) {
                     document.getElementById('customDate').value = formatTaiwanDate(existing.customDate);
                 }
@@ -208,13 +199,22 @@ function renderAll() {
         let specBought = Number(item.specialPurchased || 0);
         let specialTotal = Number(item.specialCount || 0);
         let itemTotal = (!isVideo && !isMovie && !isMerch) ? (cost * (count + specBought)) + Number(extraVal||0) : (cost * count) + (isMerch ? 0 : Number(extraVal||0));
-        if (isMerch) totalMerch += itemTotal; else if (isBomtoon) totalC += itemTotal; else totalTWD += itemTotal;
+        
+        if (isMerch) totalMerch += itemTotal; 
+        else if (isBomtoon) totalC += itemTotal; 
+        else totalTWD += itemTotal;
 
         let lastRead = Number(item.lastRead || 0);
         let mainTotal = Number(item.latestChapter || 0);
         let mainRead = Math.min(lastRead, mainTotal);
+        
         let progressText = isMerch ? `數量：<b>${count}</b> 件 ${extraVal !== "" ? `(${extraVal})` : ""}` : (isMovie ? `狀態：<b>✅ 已觀影</b>` : `進度：<b style="color: ${isBomtoon ? 'var(--accent-c)' : 'var(--text-main)'}">${mainRead}</b> / ${mainTotal} ${isVideo?'集':'話'}`);
-        if (!isMerch && (specialTotal > 0 || specBought > 0)) progressText += ` <small>(+ <b style="color: var(--accent-c)">${cost * specBought} ${currencyUnit}</b> / ${specialTotal} 外傳)</small>`;
+        
+        // 🔥 蟲蟲修正：只要有外傳總話數，就強制顯示計算結果，就算是 0 C 也要算出來顯示。
+        if (!isMerch && specialTotal > 0) {
+            let specialCost = cost * specBought;
+            progressText += ` <small>(+ <b style="color: var(--accent-c)">${specialCost} ${currencyUnit}</b> / ${specialTotal} 外傳)</small>`;
+        }
 
         let cleanDate = formatTaiwanDate(item.customDate);
         let nextDateStr = calculateNextDate(cleanDate, item.updateDayLabel);
