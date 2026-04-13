@@ -78,8 +78,8 @@ function checkTodayUpdates() {
         }
     });
     let message = "";
-    if (todayUpdateTitles.length > 0) message += `🔥 今日新菜上桌：\n${todayUpdateTitles.join('\n')}\n\n`;
-    if (unfinishedTitles.length > 0) message += `📖 這些真的還沒看完喔：\n${unfinishedTitles.join('\n')}\n\n`;
+    if (todayUpdateTitles.length > 0) message += `🔥 更新啦！：\n${todayUpdateTitles.join('\n')}\n\n`;
+    if (unfinishedTitles.length > 0) message += `📖 這些還沒看完哦：\n${unfinishedTitles.join('\n')}\n\n`;
     if (message !== "") alert(`🔔 小墨管家巡邏報告：\n\n${message}睡前補充糧食！`);
 }
 
