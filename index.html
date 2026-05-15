@@ -4,93 +4,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>霓的追劇/追漫 小墨管家</title>
-    <link rel="stylesheet" href="style.css?v=merch_total_v1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=v2">
 </head>
 <body>
-    <header>
-        <h1>霓的追劇/追漫 小墨管家</h1>
-        <div class="stats">
-            <p>總投資 C 幣：<span id="total-c-coins" class="highlight-c">0</span> C</p>
-            <p>總投資金額：<span id="total-twd" class="highlight-twd">0</span> 元</p>
-            <p>周邊總投資：<span id="total-merch" class="highlight-merch">0</span> 元</p>
+
+<!-- 🔔 Toast 通知容器 -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- 🔥 今日更新提醒 Banner（取代 alert） -->
+<div id="update-banner" class="update-banner hidden">
+    <div class="update-banner-inner">
+        <span class="update-banner-icon">🔥</span>
+        <div>
+            <div class="update-banner-title">CP寶貝更新啦！</div>
+            <div id="update-banner-list" class="update-banner-list"></div>
         </div>
-    </header>
+        <button class="update-banner-close" onclick="document.getElementById('update-banner').classList.add('hidden')">×</button>
+    </div>
+</div>
 
-    <main>
-        <section class="form-section">
-            <h2>➕ 紀錄更新</h2>
-            <form id="media-form">
-                <div class="form-group">
-                    <input type="text" id="title" placeholder="作品或商品名稱 (必填)" required>
-                    <select id="platform">
-                        <option value="bomtoon.tw">bomtoon.tw</option>
-                        <option value="Webtoon">Webtoon</option>
-                        <option value="鏡文學">鏡文學</option>
-                        <option value="BW電子書">BW電子書</option>
-                        <option value="gagaOOlala">gagaOOlala</option>
-                        <option value="Netflix">Netflix</option>
-                        <option value="愛奇藝">愛奇藝</option>
-                        <option value="Disney+">Disney+</option>
-                        <option value="實體電影院">實體電影院</option>
-                        <option value="周邊商品">✨ 周邊商品</option>
-                    </select>
-                </div>
+<header>
+    <div class="header-title-wrap">
+        <h1>小墨管家 <span class="header-sub">追劇・追漫</span></h1>
+    </div>
+    <div class="stats">
+        <div class="stat-chip stat-c">
+            <span class="stat-label">漫幣</span>
+            <span id="total-c-coins" class="stat-val">0</span>
+            <span class="stat-unit">C</span>
+        </div>
+        <div class="stat-chip stat-twd">
+            <span class="stat-label">影視</span>
+            <span id="total-twd" class="stat-val">0</span>
+            <span class="stat-unit">元</span>
+        </div>
+        <div class="stat-chip stat-merch">
+            <span class="stat-label">周邊</span>
+            <span id="total-merch" class="stat-val">0</span>
+            <span class="stat-unit">元</span>
+        </div>
+    </div>
+</header>
 
-                <div class="form-group" id="group-status-day">
-                    <select id="status">
-                        <option value="ongoing">正在追 / 預購中</option>
-                        <option value="hiatus">季休中 / 待更新</option>
-                        <option value="completed">已完結 / 已收到</option>
-                    </select>
-                    <select id="updateDay">
-                        <option value="#週一連載">#週一連載</option>
-                        <option value="#週二連載">#週二連載</option>
-                        <option value="#週三連載">#週三連載</option>
-                        <option value="#週四連載">#週四連載</option>
-                        <option value="#週五連載">#週五連載</option>
-                        <option value="#週六連載">#週六連載</option>
-                        <option value="#週日連載">#週日連載</option>
-                        <option value="#十天一次連載">#十天一次連載</option>
-                        <option value="#不定期連載">#不定期連載</option>
-                        <option value="#已完結">#已完結</option>
-                        <option value="#收藏品">#收藏品</option>
-                    </select>
-                </div>
+<main>
+    <!-- ➕ 新增/更新表單 -->
+    <section class="form-section">
+        <h2>➕ 新增 / 更新紀錄</h2>
 
-                <div id="dynamic-fields"></div>
+        <!-- 標題搜尋 + 自動補全 -->
+        <div class="title-autocomplete-wrap">
+            <input type="text" id="title" placeholder="輸入作品或商品名稱（必填）" autocomplete="off" required>
+            <ul id="autocomplete-list" class="autocomplete-list hidden"></ul>
+        </div>
 
-                <div class="date-input-group">
-                    <span id="date-label">📅 最新更新日：</span>
-                    <input type="date" id="customDate">
-                </div>
+        <div class="form-row">
+            <select id="platform">
+                <option value="bomtoon.tw">bomtoon.tw</option>
+                <option value="Webtoon">Webtoon</option>
+                <option value="鏡文學">鏡文學</option>
+                <option value="BW電子書">BW電子書</option>
+                <option value="gagaOOlala">gagaOOlala</option>
+                <option value="Netflix">Netflix</option>
+                <option value="愛奇藝">愛奇藝</option>
+                <option value="Disney+">Disney+</option>
+                <option value="實體電影院">實體電影院</option>
+                <option value="周邊商品">✨ 周邊商品</option>
+            </select>
+        </div>
 
-                <button type="submit" id="submit-btn" class="btn-submit plat-bomtoon">確認儲存</button>
-            </form>
-        </section>
+        <div class="form-row" id="group-status-day">
+            <select id="status">
+                <option value="ongoing">正在追 / 預購中</option>
+                <option value="hiatus">季休中 / 待更新</option>
+                <option value="completed">已完結 / 已收到</option>
+            </select>
+            <select id="updateDay">
+                <option value="#週一連載">#週一連載</option>
+                <option value="#週二連載">#週二連載</option>
+                <option value="#週三連載">#週三連載</option>
+                <option value="#週四連載">#週四連載</option>
+                <option value="#週五連載">#週五連載</option>
+                <option value="#週六連載">#週六連載</option>
+                <option value="#週日連載">#週日連載</option>
+                <option value="#十天一次連載">#十天一次連載</option>
+                <option value="#不定期連載">#不定期連載</option>
+                <option value="#已完結">#已完結</option>
+                <option value="#收藏品">#收藏品</option>
+            </select>
+        </div>
 
-        <div id="loading-msg" class="loading-box">⏳ 正在與 Google 資料庫同步中...</div>
+        <div id="dynamic-fields"></div>
 
-        <section id="update-alert" class="alert-section hidden">
-            <h2>🔥 更新提醒 (CP寶貝回來了)</h2>
-            <ul id="update-list" class="card-list"></ul>
-        </section>
+        <div class="date-input-group">
+            <span id="date-label">📅 最新更新日：</span>
+            <input type="date" id="customDate">
+        </div>
 
-        <section class="ongoing-section">
-            <h2>📖 追坑中</h2>
-            <ul id="ongoing-list" class="card-list"></ul>
-        </section>
+        <button type="button" id="submit-btn" class="btn-submit plat-bomtoon" onclick="handleSubmit()">
+            <span id="submit-text">確認儲存</span>
+            <span id="submit-spinner" class="spinner hidden"></span>
+        </button>
+    </section>
 
-        <section class="completed-section">
-            <h2>✅ 戰績與月費封存</h2>
-            <ul id="completed-list" class="card-list"></ul>
-        </section>
+    <!-- ⏳ 載入中 -->
+    <div id="loading-msg" class="loading-box">
+        <div class="loading-dot-wrap"><span></span><span></span><span></span></div>
+        正在與資料庫同步中…
+    </div>
 
-                <section class="merch-section">
-            <h2>🎁 周邊戰利品區</h2>
-            <ul id="merch-list" class="card-list"></ul>
-        </section>
-        
-    </main>
-    <script src="script.js?v=merch_total_v1"></script>
+    <!-- 🔥 更新提醒卡片區 -->
+    <section id="update-alert" class="update-section hidden">
+        <h2>🔥 今日更新 <span class="badge" id="update-count">0</span></h2>
+        <ul id="update-list" class="card-list"></ul>
+    </section>
+
+    <!-- 篩選列 -->
+    <div class="filter-bar">
+        <input type="search" id="search-input" placeholder="🔍 搜尋作品…" oninput="applyFilter()">
+        <select id="filter-platform" onchange="applyFilter()">
+            <option value="">全部平台</option>
+            <option value="bomtoon.tw">bomtoon.tw</option>
+            <option value="Webtoon">Webtoon</option>
+            <option value="鏡文學">鏡文學</option>
+            <option value="BW電子書">BW電子書</option>
+            <option value="gagaOOlala">gagaOOlala</option>
+            <option value="Netflix">Netflix</option>
+            <option value="愛奇藝">愛奇藝</option>
+            <option value="Disney+">Disney+</option>
+            <option value="實體電影院">實體電影院</option>
+            <option value="周邊商品">周邊商品</option>
+        </select>
+    </div>
+
+    <section class="list-section">
+        <h2>📖 追坑中 <span class="badge" id="ongoing-count">0</span></h2>
+        <ul id="ongoing-list" class="card-list"></ul>
+        <div id="ongoing-empty" class="empty-state hidden">🌟 目前沒有進行中的作品，快去開新坑！</div>
+    </section>
+
+    <section class="list-section">
+        <h2>✅ 戰績與月費封存</h2>
+        <ul id="completed-list" class="card-list"></ul>
+        <div id="completed-empty" class="empty-state hidden">還沒有已完結的紀錄</div>
+    </section>
+
+    <section class="list-section merch-section">
+        <h2>🎁 周邊戰利品 <span class="badge badge-merch" id="merch-count">0</span></h2>
+        <ul id="merch-list" class="card-list"></ul>
+        <div id="merch-empty" class="empty-state hidden">還沒有周邊收藏，剁手吧！</div>
+    </section>
+</main>
+
+<!-- 刪除確認 Modal -->
+<div id="delete-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-icon">🗑️</div>
+        <div class="modal-title">確定要刪除？</div>
+        <div id="modal-item-name" class="modal-sub"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeDeleteModal()">取消</button>
+            <button class="btn-danger" id="modal-confirm-btn">確認刪除</button>
+        </div>
+    </div>
+</div>
+
+<script src="script.js?v=v2"></script>
 </body>
 </html>
